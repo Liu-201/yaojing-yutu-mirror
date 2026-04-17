@@ -9,8 +9,8 @@
         <router-link to="/" class="nav-link">首页</router-link>
         <router-link to="/map" class="nav-link">舆图寻药</router-link>
         <router-link to="/herbs" class="nav-link">药典智库</router-link>
-         <router-link to="/timespace" class="nav-link">时空对话</router-link>
-        <!-- AI 问药后续再加 -->
+        <router-link to="/timespace" class="nav-link">时空对话</router-link>
+        <router-link to="/ai" class="nav-link">AI问药</router-link>
       </nav>
       <div class="header-actions">
         <button class="ghost-btn">登录</button>
