@@ -7,8 +7,9 @@
       </div>
       <nav class="nav-links">
         <router-link to="/" class="nav-link">首页</router-link>
+        <router-link to="/map" class="nav-link">舆图寻药</router-link>
         <router-link to="/herbs" class="nav-link">药典智库</router-link>
-        <!-- 后续再加地图和AI -->
+        <!-- AI 问药后续再加 -->
       </nav>
       <div class="header-actions">
         <button class="ghost-btn">登录</button>
@@ -90,5 +91,18 @@
   .nav-links {
     display: none;
   }
+}
+.router-link-active {
+  color: var(--text-primary);
+  position: relative;
+}
+.router-link-active::after {
+  content: '';
+  position: absolute;
+  bottom: -20px;
+  left: 0;
+  width: 100%;
+  height: 2px;
+  background: var(--brand-indigo);
 }
 </style>

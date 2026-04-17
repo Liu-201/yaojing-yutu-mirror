@@ -2,7 +2,8 @@ import { defineStore } from 'pinia'
 import { ref } from 'vue'
 
 export const useHerbStore = defineStore('herb', () => {
-  const herbs = ref([])
+    const herbs = ref([])
+    const producingAreas = ref([])
 
   async function fetchHerbs() {
     // 模拟异步加载数据（实际可从 API 获取）
@@ -70,6 +71,65 @@ export const useHerbStore = defineStore('herb', () => {
       }
     ]
   }
+function fetchProducingAreas() {
+    producingAreas.value = [
+      {
+        id: 1,
+        name: '岷县',
+        city: '定西市',
+        province: '甘肃省',
+        herbId: 2,      // 关联党参
+        herbName: '党参',
+        lng: 104.03,
+        lat: 34.44,
+        description: '中国党参之乡，海拔2500米以上，昼夜温差大，有效成分含量高。'
+      },
+      {
+        id: 2,
+        name: '陇西',
+        city: '定西市',
+        province: '甘肃省',
+        herbId: 1,      // 关联黄芪
+        herbName: '黄芪',
+        lng: 104.64,
+        lat: 35.01,
+        description: '黄芪甲苷含量远超药典标准，被誉为“黄芪第一出陇西”。'
+      },
+      {
+        id: 3,
+        name: '文山',
+        city: '文山州',
+        province: '云南省',
+        herbId: null,   // 后期可关联三七
+        herbName: '三七',
+        lng: 104.24,
+        lat: 23.37,
+        description: '三七道地产区，历史悠久，品质优良。'
+      },
+      {
+        id: 4,
+        name: '抚松',
+        city: '白山市',
+        province: '吉林省',
+        herbId: 4,
+        herbName: '人参',
+        lng: 127.45,
+        lat: 42.33,
+        description: '中国人参之乡，长白山脚下，林下参闻名。'
+      },
+      {
+        id: 5,
+        name: '中江',
+        city: '德阳市',
+        province: '四川省',
+        herbId: null,
+        herbName: '丹参',
+        lng: 104.68,
+        lat: 31.03,
+        description: '中江丹参，丹参酮含量高，出口东南亚。'
+      }
+    ]
+  }
 
-  return { herbs, fetchHerbs }
+  return { herbs, producingAreas, fetchHerbs, fetchProducingAreas }
 })
