@@ -4,6 +4,8 @@ import HerbList from '@/views/HerbList.vue'
 import HerbDetail from '@/views/HerbDetail.vue'
 import MapPage from '@/views/MapPage.vue'
 import TimeSpace from '@/views/TimeSpace.vue'
+import AIQuestion from '@/views/AIQuestion.vue'
+
 
 const routes = [
   {
@@ -30,6 +32,11 @@ const routes = [
     path: '/timespace',
     name: 'TimeSpace',
     component: TimeSpace
+  },
+  {
+  path: '/ai',
+  name: 'AIQuestion',
+  component: AIQuestion
   }
 ]
 

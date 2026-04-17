@@ -56,7 +56,7 @@ function initMap() {
   // 但为了达到类似 Linear Dark，我们直接设置背景色和图层。
   map.setDefaultCursor('pointer')
   // 使用官方暗色主题（如果存在）
-  // map.setMapStyle('amap://styles/dark') // 高德有内置暗色主题，但较亮，我们自定义一下
+  map.setMapStyle('amap://styles/dark') // 高德有内置暗色主题，但较亮，我们自定义一下
   // 手动调整样式：官方未开放深色自定义时，可用下面的方式强制修改底图颜色？不太支持，但我们可以接受官方暗色。
   // 这里使用官方暗色主题，基本符合要求。
   map.setMapStyle('amap://styles/dark')
@@ -79,7 +79,7 @@ function addMarkers() {
       title: area.name,
       icon: new window.AMap.Icon({
         size: new window.AMap.Size(24, 32),
-        image: 'https://webapi.amap.com/theme/v1.3/markers/n/mark_b.png', // 临时图标，可换成自定义
+        image: 'frontend/public/mappointer.svg', // 临时图标，可换成自定义
         imageSize: new window.AMap.Size(24, 32)
       }),
       offset: new window.AMap.Pixel(-12, -32)

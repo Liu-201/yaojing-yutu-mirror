@@ -1,24 +1,23 @@
 <template>
-  <div class="ai-chat">
+  <div class="ai-chat-container">
     <div class="chat-messages" ref="messagesContainer">
       <div v-for="(msg, idx) in messages" :key="idx" :class="['message', msg.role]">
         <div class="message-avatar">
-          <span v-if="msg.role === 'user'">🧑</span>
-          <span v-else>🌿</span>
+          {{ msg.role === 'user' ? '👤' : '🌿' }}
         </div>
         <div class="message-content">
-          <div class="message-name">{{ msg.role === 'user' ? '你' : '药境助手' }}</div>
-          <div class="message-text" v-html="formatMessage(msg.content)"></div>
-          <div v-if="msg.sources" class="message-sources">
-            <span>📚 参考：</span>
-            <a v-for="(src, i) in msg.sources" :key="i" href="#" @click.prevent="openSource(src)">{{ src }}</a>
+          <div class="message-name">{{ msg.role === 'user' ? '我' : '药境小智' }}</div>
+          <div class="message-text" v-html="msg.content"></div>
+          <div v-if="msg.refs && msg.refs.length" class="message-refs">
+            <span>参考：</span>
+            <a v-for="ref in msg.refs" :key="ref" href="#" @click.prevent="openRef(ref)">{{ ref }}</a>
           </div>
         </div>
       </div>
-      <div v-if="isTyping" class="message assistant typing">
-        <div class="message-avatar"><span>🌿</span></div>
+      <div v-if="isTyping" class="message assistant">
+        <div class="message-avatar">🌿</div>
         <div class="message-content">
-          <div class="message-name">药境助手</div>
+          <div class="message-name">药境小智</div>
           <div class="typing-indicator">
             <span></span><span></span><span></span>
           </div>
@@ -26,145 +25,117 @@
       </div>
     </div>
     <div class="chat-input-area">
-      <textarea 
-        v-model="inputText" 
-        @keydown.enter.prevent="sendMessage" 
-        placeholder="问点啥？比如「黄芪的功效」「党参哪里产的好」..."
+      <textarea
+        v-model="inputText"
+        @keydown.enter.prevent="sendMessage"
+        placeholder="问点什么吧，例如：党参的主要功效？"
         rows="2"
       ></textarea>
-      <button @click="sendMessage" :disabled="isTyping || !inputText.trim()" class="send-btn">
-        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-          <path d="M22 2L11 13M22 2l-7 20-4-9-9-4 20-7z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-        </svg>
+      <button @click="sendMessage" :disabled="isTyping || !inputText.trim()">
+        发送
       </button>
     </div>
-    <div class="chat-tips">
-      <button v-for="q in quickQuestions" :key="q" @click="inputText = q; sendMessage()" class="tip-btn">
-        {{ q }}
-      </button>
+    <div class="disclaimer">
+      * AI 回答仅供参考，不构成医疗建议。如有身体不适请咨询专业医师。
     </div>
   </div>
 </template>
 
 <script setup>
-import { ref, nextTick, watch } from 'vue'
+import { ref, nextTick, onMounted } from 'vue'
 
-// 消息列表
 const messages = ref([
-  { role: 'assistant', content: '你好呀！我是药境助手，可以问我关于中药材的产地、功效、用法、历史典故等问题～试试输入「黄芪有什么功效」吧。' }
+  {
+    role: 'assistant',
+    content: '你好呀！我是药境小智，可以问我任何关于中药材的问题，比如产地、功效、用法、历史典故等～',
+    refs: []
+  }
 ])
 const inputText = ref('')
 const isTyping = ref(false)
 const messagesContainer = ref(null)
 
-// 快速提问示例
-const quickQuestions = [
-  '党参的主要产地在哪里？',
-  '黄芪有什么功效？',
-  '人参和党参的区别',
-  '道地药材是什么意思？'
-]
-
-// 简单的模拟回答库（真实场景可替换为API调用）
-function getMockReply(question) {
-  const q = question.toLowerCase()
-  if (q.includes('党参') && q.includes('产地')) {
+// 模拟后端 API（后续可替换为真实请求）
+async function callMockAPI(question) {
+  // 模拟网络延迟
+  await new Promise(resolve => setTimeout(resolve, 800))
+  const lowerQ = question.toLowerCase()
+  if (lowerQ.includes('党参') && lowerQ.includes('功效')) {
     return {
-      content: '党参的道地产区历史上在山西上党（今长治），现在主要产于甘肃岷县、渭源、陇西等地。甘肃产的党参因海拔高、昼夜温差大，有效成分含量高，品质优良。',
-      sources: ['《中国道地药材》', '甘肃农业大学研究']
+      answer: '党参，性平，味甘。主要功效为：<strong>补中益气、健脾益肺</strong>。常用于脾肺气虚、食少倦怠、咳嗽虚喘、气血不足等症状。现代研究表明，党参具有增强免疫力、抗疲劳、调节血压等作用。',
+      refs: ['《中国药典》2020年版', '《中药学》教材']
     }
-  }
-  if (q.includes('黄芪') && q.includes('功效')) {
+  } else if (lowerQ.includes('黄芪') && lowerQ.includes('产地')) {
     return {
-      content: '黄芪性甘、温，归脾、肺经。主要功效：补气固表，利尿托毒，排脓敛疮生肌。常用于气虚乏力、食少便溏、中气下陷、久泻脱肛等。现代研究表明，黄芪能增强免疫力、抗衰老、降血压。',
-      sources: ['《中国药典》2020年版', '《中药学》教材']
+      answer: '黄芪的道地产区主要在<strong>山西、甘肃、内蒙古</strong>。其中山西浑源、甘肃陇西所产黄芪品质最佳，被称为“黄芪之乡”。',
+      refs: ['《中药材生产区划》', '中国道地药材']
     }
-  }
-  if (q.includes('人参') && q.includes('党参')) {
+  } else if (lowerQ.includes('人参') && lowerQ.includes('故事')) {
     return {
-      content: '人参和党参都是补气药，但人参补气作用更强，能大补元气，用于气虚欲脱；党参补气较为平和，兼能健脾养血。人参偏温，党参偏平。人参价格昂贵，党参则更平民。',
-      sources: ['《中药学》', '《本草纲目》']
+      answer: '人参的故事可多了～《神农本草经》将其列为上品，称其“主补五脏，安精神，定魂魄”。民间传说人参有灵性，千年人参会变成穿红肚兜的小娃娃，所以挖参人要用红绳绑住参苗，防止它“逃跑”。',
+      refs: ['《本草纲目》', '中国民间故事']
     }
-  }
-  if (q.includes('道地药材')) {
+  } else {
     return {
-      content: '道地药材是指经过中医临床长期应用优选出来的，产在特定地域，品质和疗效优良的药材。比如甘肃的当归、宁夏的枸杞、四川的黄连、吉林的人参等。道地药材的形成与当地的气候、土壤、水文等自然条件密切相关。',
-      sources: ['《道地药材理论与文献研究》']
+      answer: `关于“${question}”，我暂时还没学习到足够的信息。你可以试试问“党参的功效”、“黄芪的产地”、“人参的故事”等～`,
+      refs: []
     }
-  }
-  // 默认回复
-  return {
-    content: '嗯嗯，这个问题我需要查一下资料～目前我的知识库还在完善中，你可以试试问「黄芪的功效」或「党参的产地」等常见问题。',
-    sources: []
   }
 }
 
-// 模拟API调用（延时+随机）
-async function askAI(question) {
-  return new Promise((resolve) => {
-    setTimeout(() => {
-      resolve(getMockReply(question))
-    }, 800 + Math.random() * 500)
-  })
-}
-
-// 发送消息
 async function sendMessage() {
-  const text = inputText.value.trim()
-  if (!text || isTyping.value) return
+  const q = inputText.value.trim()
+  if (!q || isTyping.value) return
   // 添加用户消息
-  messages.value.push({ role: 'user', content: text })
+  messages.value.push({
+    role: 'user',
+    content: q,
+    refs: []
+  })
   inputText.value = ''
+  await nextTick()
   scrollToBottom()
+  // 开始请求
   isTyping.value = true
-  
   try {
-    const reply = await askAI(text)
+    const res = await callMockAPI(q)
     messages.value.push({
       role: 'assistant',
-      content: reply.content,
-      sources: reply.sources
+      content: res.answer,
+      refs: res.refs || []
     })
   } catch (err) {
-    messages.value.push({ role: 'assistant', content: '网络开小差了，稍后再试试吧～' })
+    messages.value.push({
+      role: 'assistant',
+      content: '哎呀，网络开小差了，请稍后再试～',
+      refs: []
+    })
   } finally {
     isTyping.value = false
+    await nextTick()
     scrollToBottom()
   }
 }
 
-// 滚动到底部
 function scrollToBottom() {
-  nextTick(() => {
-    if (messagesContainer.value) {
-      messagesContainer.value.scrollTop = messagesContainer.value.scrollHeight
-    }
-  })
+  if (messagesContainer.value) {
+    messagesContainer.value.scrollTop = messagesContainer.value.scrollHeight
+  }
 }
 
-// 格式化消息（支持换行、简单markdown）
-function formatMessage(text) {
-  return text.replace(/\n/g, '<br>')
+function openRef(ref) {
+  alert(`参考来源：${ref}\n（实际可跳转至详情页）`)
 }
-
-// 打开参考来源（模拟）
-function openSource(src) {
-  alert(`资料来源：${src}（演示版，实际可跳转至详情页）`)
-}
-
-// 监听消息变化自动滚动
-watch(messages, () => scrollToBottom(), { deep: true })
 </script>
 
 <style scoped>
-.ai-chat {
-  background: var(--bg-surface);
+.ai-chat-container {
+  background: var(--bg-panel);
   border-radius: var(--radius-lg);
   border: 1px solid var(--border-standard);
   display: flex;
   flex-direction: column;
   height: 600px;
-  max-height: 70vh;
   overflow: hidden;
 }
 .chat-messages {
@@ -184,29 +155,27 @@ watch(messages, () => scrollToBottom(), { deep: true })
   align-self: flex-end;
   flex-direction: row-reverse;
 }
-.message.assistant {
-  align-self: flex-start;
-}
 .message-avatar {
   width: 32px;
   height: 32px;
-  background: var(--bg-elevated);
+  background: var(--bg-surface);
   border-radius: 50%;
   display: flex;
   align-items: center;
   justify-content: center;
   font-size: 18px;
-  flex-shrink: 0;
+  border: 1px solid var(--border-standard);
 }
 .message.user .message-avatar {
   background: var(--brand-indigo);
+  border: none;
 }
 .message-content {
-  background: var(--bg-panel);
+  background: var(--bg-surface);
   border-radius: var(--radius-lg);
   padding: var(--space-3) var(--space-4);
   border: 1px solid var(--border-subtle);
-  max-width: calc(100% - 44px);
+  max-width: 100%;
 }
 .message.user .message-content {
   background: var(--brand-indigo);
@@ -215,33 +184,30 @@ watch(messages, () => scrollToBottom(), { deep: true })
 .message-name {
   font-size: 12px;
   font-weight: 510;
-  color: var(--text-tertiary);
+  color: var(--text-secondary);
   margin-bottom: 4px;
 }
 .message.user .message-name {
-  color: rgba(255,255,255,0.7);
+  color: rgba(255,255,255,0.8);
 }
 .message-text {
   font-size: 14px;
-  color: var(--text-primary);
   line-height: 1.5;
-  word-break: break-word;
+  color: var(--text-primary);
 }
 .message.user .message-text {
   color: white;
 }
-.message-sources {
+.message-refs {
   margin-top: var(--space-2);
   font-size: 11px;
-  color: var(--text-quaternary);
+  color: var(--text-tertiary);
 }
-.message-sources a {
+.message-refs a {
   color: var(--brand-accent);
-  margin-left: 6px;
-  text-decoration: none;
-}
-.message-sources a:hover {
+  margin-left: 8px;
   text-decoration: underline;
+  cursor: pointer;
 }
 .typing-indicator {
   display: flex;
@@ -253,76 +219,57 @@ watch(messages, () => scrollToBottom(), { deep: true })
   height: 6px;
   background: var(--text-tertiary);
   border-radius: 50%;
-  animation: blink 1.2s infinite;
+  animation: blink 1.4s infinite;
 }
 .typing-indicator span:nth-child(2) { animation-delay: 0.2s; }
 .typing-indicator span:nth-child(3) { animation-delay: 0.4s; }
 @keyframes blink {
-  0%, 60%, 100% { opacity: 0.2; }
-  30% { opacity: 1; }
+  0%, 60%, 100% { opacity: 0.4; transform: scale(1); }
+  30% { opacity: 1; transform: scale(1.2); }
 }
 .chat-input-area {
   display: flex;
-  gap: var(--space-2);
+  gap: var(--space-3);
   padding: var(--space-4);
   border-top: 1px solid var(--border-subtle);
-  background: var(--bg-surface);
+  background: var(--bg-panel);
 }
 .chat-input-area textarea {
   flex: 1;
-  background: rgba(255,255,255,0.02);
+  background: var(--bg-surface);
   border: 1px solid var(--border-standard);
   border-radius: var(--radius-md);
-  padding: 8px 12px;
+  padding: 10px 12px;
   font-family: var(--font-sans);
   font-size: 14px;
   color: var(--text-primary);
-  resize: none;
+  resize: vertical;
 }
 .chat-input-area textarea:focus {
   outline: none;
   border-color: var(--brand-accent);
 }
-.send-btn {
+.chat-input-area button {
   background: var(--brand-indigo);
   border: none;
   border-radius: var(--radius-md);
-  width: 40px;
-  height: 40px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
+  padding: 0 20px;
   color: white;
+  font-weight: 510;
   cursor: pointer;
   transition: background 0.2s;
 }
-.send-btn:hover {
+.chat-input-area button:hover:not(:disabled) {
   background: var(--brand-hover);
 }
-.send-btn:disabled {
+.chat-input-area button:disabled {
   opacity: 0.5;
   cursor: not-allowed;
 }
-.chat-tips {
-  display: flex;
-  gap: var(--space-2);
-  flex-wrap: wrap;
-  padding: var(--space-3) var(--space-4);
-  border-top: 1px solid var(--border-subtle);
-  background: var(--bg-surface);
-}
-.tip-btn {
-  background: rgba(255,255,255,0.02);
-  border: 1px solid var(--border-standard);
-  border-radius: var(--radius-full);
-  padding: 4px 12px;
-  font-size: 12px;
-  color: var(--text-secondary);
-  cursor: pointer;
-  transition: all 0.2s;
-}
-.tip-btn:hover {
-  background: rgba(255,255,255,0.05);
-  color: var(--text-primary);
+.disclaimer {
+  text-align: center;
+  font-size: 11px;
+  color: var(--text-quaternary);
+  padding: var(--space-2) var(--space-4) var(--space-4);
 }
 </style>
