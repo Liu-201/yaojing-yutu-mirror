@@ -11,6 +11,7 @@
   border-top: 1px solid var(--border-subtle);
   background: var(--bg-panel);
   padding: var(--space-6) 0;
+  margin-top: auto;
 }
 .footer-container {
   max-width: 1280px;
@@ -21,5 +22,6 @@
 .copyright {
   font-size: 13px;
   color: var(--text-quaternary);
+  margin: 0;
 }
 </style>

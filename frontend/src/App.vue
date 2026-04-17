@@ -1,15 +1,10 @@
 <template>
-  <div class="app-wrapper" ref="appWrapper">
-    <!-- 动态弥散光背景层 -->
+  <div class="app-wrapper">
     <div class="aurora-bg"></div>
-    <!-- 白色噪点纹理层 -->
     <div class="noise-overlay"></div>
-
-    <!-- 视差滚动容器（背景移动速度为前景的 50%） -->
     <div class="parallax-container" ref="parallaxContainer">
       <AppHeader />
       <main class="main-content">
-        <!-- 页面切换平滑转场（淡入淡出 + 轻微上浮） -->
         <router-view v-slot="{ Component }">
           <transition name="page" mode="out-in">
             <component :is="Component" />
@@ -18,11 +13,10 @@
       </main>
       <AppFooter />
     </div>
-
-    <!-- 全局 Toast 通知容器 -->
     <ToastContainer />
   </div>
 </template>
+
 
 <script setup>
 import { ref, onMounted, onUnmounted } from 'vue'
@@ -56,7 +50,8 @@ onUnmounted(() => {
 .app-wrapper {
   position: relative;
   min-height: 100vh;
-  background-color: var(--bg-marketing);
+  display: flex;
+  flex-direction: column;
 }
 
 /* 动态弥散光背景（Aurora Gradient） */
@@ -104,9 +99,9 @@ onUnmounted(() => {
 
 /* 视差滚动容器 */
 .parallax-container {
-  position: relative;
-  will-change: transform;
-  background: transparent;
+  flex: 1;
+  display: flex;
+  flex-direction: column;
 }
 
 /* 页面切换转场动画 */
