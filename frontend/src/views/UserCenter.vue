@@ -115,7 +115,8 @@ onMounted(async () => {
 <style scoped>
 .user-center {
   max-width: 1000px;
-  margin: 0 auto;
+  margin: 8vh auto 4vh auto;
+  padding: 0 var(--space-4);
 }
 .not-logged-in {
   text-align: center;

@@ -14,13 +14,11 @@
           </div>
         </div>
       </div>
+      <!-- 骨架屏加载效果，替代原来的打字指示器 -->
       <div v-if="isTyping" class="message assistant">
         <div class="message-avatar">🌿</div>
-        <div class="message-content">
-          <div class="message-name">药境小智</div>
-          <div class="typing-indicator">
-            <span></span><span></span><span></span>
-          </div>
+        <div class="message-content skeleton-wrapper">
+          <SkeletonLoader />
         </div>
       </div>
     </div>
@@ -42,7 +40,13 @@
 </template>
 
 <script setup>
-import { ref, nextTick, onMounted } from 'vue'
+import { ref, nextTick } from 'vue'
+import { useUserStore } from '@/stores/userStore'
+import { useToastStore } from '@/stores/toastStore'
+import SkeletonLoader from './SkeletonLoader.vue'
+
+const userStore = useUserStore()
+const toastStore = useToastStore()
 
 const messages = ref([
   {
@@ -57,7 +61,6 @@ const messagesContainer = ref(null)
 
 // 模拟后端 API（后续可替换为真实请求）
 async function callMockAPI(question) {
-  // 模拟网络延迟
   await new Promise(resolve => setTimeout(resolve, 800))
   const lowerQ = question.toLowerCase()
   if (lowerQ.includes('党参') && lowerQ.includes('功效')) {
@@ -84,11 +87,9 @@ async function callMockAPI(question) {
 }
 
 async function sendMessage() {
-  if (userStore.isLoggedIn) {
-  userStore.addQaRecord(q, res.answer, res.refs)
-  }
   const q = inputText.value.trim()
   if (!q || isTyping.value) return
+
   // 添加用户消息
   messages.value.push({
     role: 'user',
@@ -98,7 +99,7 @@ async function sendMessage() {
   inputText.value = ''
   await nextTick()
   scrollToBottom()
-  // 开始请求
+
   isTyping.value = true
   try {
     const res = await callMockAPI(q)
@@ -107,12 +108,18 @@ async function sendMessage() {
       content: res.answer,
       refs: res.refs || []
     })
+    // 如果用户已登录，保存问答记录
+    if (userStore.isLoggedIn) {
+      userStore.addQaRecord(q, res.answer, res.refs)
+    }
+    toastStore.addToast('回答已生成', 'success', 2000)
   } catch (err) {
     messages.value.push({
       role: 'assistant',
       content: '哎呀，网络开小差了，请稍后再试～',
       refs: []
     })
+    toastStore.addToast('网络错误，请重试', 'error', 3000)
   } finally {
     isTyping.value = false
     await nextTick()
@@ -127,7 +134,8 @@ function scrollToBottom() {
 }
 
 function openRef(ref) {
-  alert(`参考来源：${ref}\n（实际可跳转至详情页）`)
+  // 使用 Toast 提示，替代 alert
+  toastStore.addToast(`参考来源：${ref}`, 'info', 2000)
 }
 </script>
 
@@ -212,23 +220,11 @@ function openRef(ref) {
   text-decoration: underline;
   cursor: pointer;
 }
-.typing-indicator {
-  display: flex;
-  gap: 4px;
-  padding: 4px 0;
-}
-.typing-indicator span {
-  width: 6px;
-  height: 6px;
-  background: var(--text-tertiary);
-  border-radius: 50%;
-  animation: blink 1.4s infinite;
-}
-.typing-indicator span:nth-child(2) { animation-delay: 0.2s; }
-.typing-indicator span:nth-child(3) { animation-delay: 0.4s; }
-@keyframes blink {
-  0%, 60%, 100% { opacity: 0.4; transform: scale(1); }
-  30% { opacity: 1; transform: scale(1.2); }
+/* 骨架屏包裹样式 */
+.skeleton-wrapper {
+  background: transparent !important;
+  padding: 0 !important;
+  border: none !important;
 }
 .chat-input-area {
   display: flex;

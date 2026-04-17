@@ -3,35 +3,18 @@
 </template>
 
 <script setup>
-import { onMounted, onBeforeUnmount, ref } from 'vue'
+import { onMounted, onBeforeUnmount } from 'vue'
 import { useHerbStore } from '@/stores/herbStore'
 import { useRouter } from 'vue-router'
+import { useToastStore } from '@/stores/toastStore'
 
 const herbStore = useHerbStore()
 const router = useRouter()
+const toastStore = useToastStore()
 let map = null
-let markers = []   // 存储标记对象，用于清理
-
-// 高德地图深色自定义样式（JSON 风格）
-const darkMapStyle = {
-  version: '1.1',
-  settings: {
-    background: '#08090a',
-    labelColor: '#d0d6e0',
-    roadColor: '#2a2c30',
-    buildingColor: '#1a1b1e'
-  },
-  features: [
-    { featureType: 'water', elementType: 'geometry', stylers: { color: '#0a1a2a' } },
-    { featureType: 'land', elementType: 'geometry', stylers: { color: '#0f1011' } },
-    { featureType: 'building', elementType: 'geometry', stylers: { color: '#1e1f22' } },
-    { featureType: 'road', elementType: 'geometry', stylers: { color: '#282c30', visibility: 'on' } },
-    { featureType: 'label', elementType: 'all', stylers: { color: '#a0a5b0' } }
-  ]
-}
+let markers = []
 
 onMounted(async () => {
-  // 确保产区数据已加载
   if (!herbStore.producingAreas.length) {
     await herbStore.fetchProducingAreas()
   }
@@ -43,90 +26,74 @@ onMounted(async () => {
 })
 
 function initMap() {
-  // 创建地图实例，中心点为中国大致中心
   map = new window.AMap.Map('map-container', {
     zoom: 5,
     center: [104.0, 35.0],
     viewMode: '2D',
-    mapStyle: 'amap://styles/自定义', // 实际使用自定义样式需要注册，此处使用深色主题方式
-    features: ['bg', 'road', 'building', 'point'] // 控制显示要素
+    mapStyle: 'amap://styles/dark', // 使用官方深色主题
+    features: ['bg', 'road', 'building', 'point']
   })
-  // 设置深色风格（如果支持 setMapStyle）
-  // 高德 v2 支持 setMapStyle，但自定义样式需在控制台创建样式ID。为简单，我们用 setFeatures 和设置背景色。
-  // 但为了达到类似 Linear Dark，我们直接设置背景色和图层。
   map.setDefaultCursor('pointer')
-  // 使用官方暗色主题（如果存在）
-  map.setMapStyle('amap://styles/dark') // 高德有内置暗色主题，但较亮，我们自定义一下
-  // 手动调整样式：官方未开放深色自定义时，可用下面的方式强制修改底图颜色？不太支持，但我们可以接受官方暗色。
-  // 这里使用官方暗色主题，基本符合要求。
-  map.setMapStyle('amap://styles/dark')
-  
-  // 等待地图加载完成
   map.on('complete', () => {
     addMarkers()
   })
 }
 
 function addMarkers() {
-  // 从 store 获取产区数据
   const areas = herbStore.producingAreas
   if (!areas.length) return
 
   areas.forEach(area => {
-    // 创建标记点
+    // 自定义标记点图标（更符合 Linear 风格的简洁圆点）
     const marker = new window.AMap.Marker({
       position: [area.lng, area.lat],
       title: area.name,
       icon: new window.AMap.Icon({
-        size: new window.AMap.Size(24, 32),
-        image: 'https://webapi.amap.com/theme/v1.3/markers/n/mark_b.png', // 临时图标，可换成自定义
-        imageSize: new window.AMap.Size(24, 32)
+        size: new window.AMap.Size(16, 16),
+        image: 'https://webapi.amap.com/theme/v1.3/markers/n/mark_b.png', // 可替换为自定义圆形图标
+        imageSize: new window.AMap.Size(16, 16)
       }),
-      offset: new window.AMap.Pixel(-12, -32)
+      offset: new window.AMap.Pixel(-8, -8)
     })
-    // 自定义标记样式：我们希望使用青色圆点，但简单起见用默认图标也行
-    // 为了更符合 Linear，我们可以用自定义图标（后续可优化）
     marker.setMap(map)
-    
-    // 创建信息窗体内容
+
+    // 信息窗体内容（深色玻璃态，无白边）
     const content = `
-        <div class="custom-info-window">
-            <h4>${area.herbName || area.name}</h4>
-            <p class="location">${area.province} · ${area.city}</p>
-            <p class="desc">${area.description}</p>
-         <button class="info-btn" data-id="${area.id}">查看详情</button>
-    </div>
+      <div class="custom-info-window glass-card">
+        <h4>${area.herbName || area.name}</h4>
+        <p class="location">${area.province} · ${area.city}</p>
+        <p class="desc">${area.description}</p>
+        <button class="info-btn clickable-scale" data-id="${area.id}">查看详情</button>
+      </div>
     `
     const infoWindow = new window.AMap.InfoWindow({
       content: content,
-      offset: new window.AMap.Pixel(0, -30)
+      offset: new window.AMap.Pixel(0, -30),
+      isCustom: true  // 完全自定义样式，不使用默认窗体
     })
-    
-    // 点击标记时打开信息窗体
+
     marker.on('click', () => {
-    infoWindow.open(map, marker.getPosition())
-  // 使用事件委托绑定按钮点击（因为按钮是动态生成的）
-    setTimeout(() => {
+      infoWindow.open(map, marker.getPosition())
+      setTimeout(() => {
         const btn = document.querySelector(`.custom-info-window .info-btn[data-id="${area.id}"]`)
         if (btn) {
-            btn.onclick = (e) => {
-                e.stopPropagation()
-                if (area.herbId) {
-                router.push(`/herbs/${area.herbId}`)
-                } else {
-                    alert(`暂未收录 ${area.herbName} 的详细数据`)
-                }
-                infoWindow.close()// 可选：关闭信息窗体
+          btn.onclick = (e) => {
+            e.stopPropagation()
+            if (area.herbId) {
+              router.push(`/herbs/${area.herbId}`)
+              toastStore.addToast('跳转到药材详情', 'info', 1500)
+            } else {
+              toastStore.addToast(`暂未收录 ${area.herbName} 的详细数据`, 'error', 2000)
             }
+            infoWindow.close()
+          }
         }
-    }, 50)
-})
-    
+      }, 50)
+    })
     markers.push(marker)
   })
 }
 
-// 组件销毁前清理地图资源
 onBeforeUnmount(() => {
   if (map) {
     map.destroy()
@@ -135,9 +102,74 @@ onBeforeUnmount(() => {
 </script>
 
 <style scoped>
-/* 确保容器正确显示 */
 #map-container {
   width: 100%;
   height: 500px;
+  transition: all 0.3s ease;
+}
+</style>
+
+<style>
+/* 全局覆盖高德地图默认信息窗体样式（确保深色无白边） */
+.amap-info-window {
+  background: transparent !important;
+  border: none !important;
+  box-shadow: none !important;
+}
+.amap-info-content {
+  background: transparent !important;
+  border: none !important;
+  padding: 0 !important;
+}
+.amap-info-sharp {
+  display: none !important;
+}
+.amap-info-close {
+  display: none !important;
+}
+.custom-info-window {
+  background: rgba(25, 26, 27, 0.85) !important;
+  backdrop-filter: blur(12px) !important;
+  border: 1px solid rgba(255, 255, 255, 0.12) !important;
+  border-radius: 12px !important;
+  padding: 12px 16px !important;
+  max-width: 260px;
+  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.3);
+  transition: transform 0.2s;
+}
+.custom-info-window h4 {
+  margin: 0 0 4px 0;
+  color: #f7f8f8;
+  font-size: 16px;
+  font-weight: 590;
+}
+.custom-info-window .location {
+  margin: 0 0 8px 0;
+  font-size: 12px;
+  color: #8a8f98;
+}
+.custom-info-window .desc {
+  margin: 0 0 12px 0;
+  font-size: 13px;
+  color: #d0d6e0;
+  line-height: 1.4;
+}
+.custom-info-window .info-btn {
+  background: #5e6ad2;
+  border: none;
+  border-radius: 6px;
+  padding: 4px 12px;
+  font-size: 12px;
+  font-weight: 510;
+  color: white;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+.custom-info-window .info-btn:hover {
+  background: #7170ff;
+  transform: scale(1.02);
+}
+.custom-info-window .info-btn:active {
+  transform: scale(0.98);
 }
 </style>
