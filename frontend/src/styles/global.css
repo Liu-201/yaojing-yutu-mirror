@@ -88,3 +88,63 @@ button:hover {
 ::-webkit-scrollbar-thumb:hover {
   background: var(--text-quaternary);
 }
+
+/* 自定义信息窗体样式 - 覆盖高德默认样式 */
+.amap-info-window {
+  background: transparent !important;
+  border: none !important;
+  box-shadow: none !important;
+}
+.amap-info-content {
+  background: transparent !important;
+  border: none !important;
+  padding: 0 !important;
+}
+.amap-info-close {
+  display: none !important;  /* 隐藏默认关闭按钮，用自定义按钮代替 */
+}
+.custom-info-window {
+  background: #1a1b1e;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 12px;
+  padding: 12px 16px;
+  max-width: 260px;
+  backdrop-filter: blur(4px);
+  box-shadow: 0 8px 20px rgba(0,0,0,0.3);
+}
+.custom-info-window h4 {
+  margin: 0 0 4px 0;
+  color: #f7f8f8;
+  font-size: 16px;
+  font-weight: 590;
+  letter-spacing: -0.2px;
+}
+.custom-info-window .location {
+  margin: 0 0 8px 0;
+  font-size: 12px;
+  color: #8a8f98;
+}
+.custom-info-window .desc {
+  margin: 0 0 12px 0;
+  font-size: 13px;
+  color: #d0d6e0;
+  line-height: 1.4;
+}
+.custom-info-window .info-btn {
+  background: #5e6ad2;
+  border: none;
+  border-radius: 6px;
+  padding: 4px 12px;
+  font-size: 12px;
+  font-weight: 510;
+  color: white;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+.custom-info-window .info-btn:hover {
+  background: #7170ff;
+}
+/* 隐藏默认的白色三角箭头（高德地图默认信息窗体有箭头，通过伪元素） */
+.amap-info-sharp {
+  display: none !important;
+}

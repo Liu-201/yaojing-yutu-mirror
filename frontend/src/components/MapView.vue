@@ -79,7 +79,7 @@ function addMarkers() {
       title: area.name,
       icon: new window.AMap.Icon({
         size: new window.AMap.Size(24, 32),
-        image: 'frontend/public/mappointer.svg', // 临时图标，可换成自定义
+        image: 'https://webapi.amap.com/theme/v1.3/markers/n/mark_b.png', // 临时图标，可换成自定义
         imageSize: new window.AMap.Size(24, 32)
       }),
       offset: new window.AMap.Pixel(-12, -32)
@@ -90,12 +90,12 @@ function addMarkers() {
     
     // 创建信息窗体内容
     const content = `
-      <div style="background: #191a1b; border: 1px solid rgba(255,255,255,0.08); border-radius: 8px; padding: 12px; max-width: 240px; font-family: Inter, sans-serif;">
-        <h4 style="margin: 0 0 4px; color: #f7f8f8; font-weight: 590;">${area.herbName || area.name}</h4>
-        <p style="margin: 0 0 8px; font-size: 12px; color: #8a8f98;">${area.province} · ${area.city}</p>
-        <p style="margin: 0 0 12px; font-size: 13px; color: #d0d6e0;">${area.description}</p>
-        <button id="view-detail-${area.id}" style="background: #5e6ad2; border: none; border-radius: 6px; padding: 4px 12px; color: white; font-size: 12px; cursor: pointer;">查看详情</button>
-      </div>
+        <div class="custom-info-window">
+            <h4>${area.herbName || area.name}</h4>
+            <p class="location">${area.province} · ${area.city}</p>
+            <p class="desc">${area.description}</p>
+         <button class="info-btn" data-id="${area.id}">查看详情</button>
+    </div>
     `
     const infoWindow = new window.AMap.InfoWindow({
       content: content,
@@ -104,21 +104,23 @@ function addMarkers() {
     
     // 点击标记时打开信息窗体
     marker.on('click', () => {
-      infoWindow.open(map, marker.getPosition())
-      // 延迟绑定按钮事件，因为 DOM 尚未渲染
-      setTimeout(() => {
-        const btn = document.getElementById(`view-detail-${area.id}`)
+    infoWindow.open(map, marker.getPosition())
+  // 使用事件委托绑定按钮点击（因为按钮是动态生成的）
+    setTimeout(() => {
+        const btn = document.querySelector(`.custom-info-window .info-btn[data-id="${area.id}"]`)
         if (btn) {
-          btn.onclick = () => {
-            if (area.herbId) {
-              router.push(`/herbs/${area.herbId}`)
-            } else {
-              alert(`暂未收录 ${area.herbName} 的详细数据`)
+            btn.onclick = (e) => {
+                e.stopPropagation()
+                if (area.herbId) {
+                router.push(`/herbs/${area.herbId}`)
+                } else {
+                    alert(`暂未收录 ${area.herbName} 的详细数据`)
+                }
+                infoWindow.close()// 可选：关闭信息窗体
             }
-          }
         }
-      }, 100)
-    })
+    }, 50)
+})
     
     markers.push(marker)
   })
