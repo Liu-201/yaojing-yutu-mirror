@@ -84,6 +84,9 @@ async function callMockAPI(question) {
 }
 
 async function sendMessage() {
+  if (userStore.isLoggedIn) {
+  userStore.addQaRecord(q, res.answer, res.refs)
+  }
   const q = inputText.value.trim()
   if (!q || isTyping.value) return
   // 添加用户消息

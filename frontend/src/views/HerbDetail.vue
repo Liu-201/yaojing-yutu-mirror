@@ -1,34 +1,47 @@
 <template>
   <div class="herb-detail" v-if="herb">
-    <div class="detail-header">
-      <button class="back-btn" @click="router.back()">← 返回列表</button>
-    </div>
-    <div class="detail-grid">
-      <div class="detail-image">
-        <img :src="herb.image" :alt="herb.name" />
-      </div>
-      <div class="detail-info">
-        <h1>{{ herb.name }}</h1>
-        <p class="latin-name">{{ herb.latinName }}</p>
+        <div class="detail-header">
+            <button class="back-btn" @click="router.back()">← 返回列表</button>
+        </div>
+
+        <div class="detail-grid">
+        <div class="detail-image">
+            <img :src="herb.image" :alt="herb.name" />
+        </div>
+
+        <div class="detail-info">
+            <h1>{{ herb.name }}</h1>
+            <p class="latin-name">{{ herb.latinName }}</p>
         <div class="tags">
-          <span class="tag">{{ herb.categoryLabel }}</span>
-          <StatusBadge :status="herb.status" />
+            <span class="tag">{{ herb.categoryLabel }}</span>
+            <StatusBadge :status="herb.status" />
         </div>
+
         <div class="info-section">
-          <h3>性味归经</h3>
-          <p>{{ herb.propertyFlavor }}</p>
+            <h3>性味归经</h3>
+            <p>{{ herb.propertyFlavor }}</p>
         </div>
+
         <div class="info-section">
-          <h3>功效主治</h3>
-          <p>{{ herb.effects }}</p>
+            <h3>功效主治</h3>
+            <p>{{ herb.effects }}</p>
         </div>
+
         <div class="info-section">
-          <h3>道地产区</h3>
-          <p>{{ herb.producingArea }}</p>
+            <h3>道地产区</h3>
+            <p>{{ herb.producingArea }}</p>
         </div>
+
         <div class="info-section" v-if="herb.chemicalComposition">
-          <h3>主要成分</h3>
-          <p>{{ herb.chemicalComposition }}</p>
+            <h3>主要成分</h3>
+            <p>{{ herb.chemicalComposition }}</p>
+        </div>
+
+        <div class="detail-header">
+            <button class="back-btn" @click="router.back()">← 返回列表</button>
+            <button v-if="userStore.isLoggedIn" class="favorite-btn" @click="toggleFavorite">
+                {{ isFavorited ? '❤️ 已收藏' : '🤍 收藏' }}
+            </button>
         </div>
       </div>
     </div>
@@ -45,17 +58,26 @@ import { ref, onMounted } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { useHerbStore } from '@/stores/herbStore'
 import StatusBadge from '@/components/StatusBadge.vue'
+import { computed } from 'vue'
+import { useUserStore } from '@/stores/userStore'
 
 const route = useRoute()
 const router = useRouter()
 const herbStore = useHerbStore()
 const herb = ref(null)
+const userStore = useUserStore()
+const isFavorited = computed(() => userStore.favoriteHerbIds.includes(herb.value?.id))
 
 onMounted(async () => {
   const id = parseInt(route.params.id)
   await herbStore.fetchHerbs()
   herb.value = herbStore.herbs.find(h => h.id === id)
 })
+function toggleFavorite() {
+  if (herb.value) {
+    userStore.toggleFavorite(herb.value.id)
+  }
+}
 </script>
 
 <style scoped>

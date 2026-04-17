@@ -5,7 +5,7 @@ import HerbDetail from '@/views/HerbDetail.vue'
 import MapPage from '@/views/MapPage.vue'
 import TimeSpace from '@/views/TimeSpace.vue'
 import AIQuestion from '@/views/AIQuestion.vue'
-
+import TraceCode from '@/views/TraceCode.vue'
 
 const routes = [
   {
@@ -37,7 +37,18 @@ const routes = [
   path: '/ai',
   name: 'AIQuestion',
   component: AIQuestion
-  }
+  },
+  {
+  path: '/trace',
+  name: 'TraceCode',
+  component: TraceCode
+  },
+  {
+  path: '/user',
+  name: 'UserCenter',
+  component: () => import('@/views/UserCenter.vue')
+}
+
 ]
 
 const router = createRouter({
@@ -51,5 +62,6 @@ const router = createRouter({
     }
   }
 })
+
 
 export default router

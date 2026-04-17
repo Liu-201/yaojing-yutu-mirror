@@ -1,7 +1,7 @@
 <template>
   <header class="app-header">
     <div class="header-container">
-      <div class="logo-area">
+      <div class="logo-area" @click="router.push('/')" style="cursor: pointer;">
         <img src="@/assets/logo.svg" alt="Logo" class="logo" />
         <span class="logo-text">药境·舆图</span>
       </div>
@@ -13,12 +13,41 @@
         <router-link to="/ai" class="nav-link">AI问药</router-link>
       </nav>
       <div class="header-actions">
-        <button class="ghost-btn">登录</button>
-        <button class="primary-btn">开始探索</button>
+        <template v-if="userStore.isLoggedIn">
+          <router-link to="/user" class="user-avatar">
+            {{ userStore.currentUser?.nickname?.charAt(0) || userStore.currentUser?.username?.charAt(0) }}
+          </router-link>
+          <button @click="handleLogout" class="logout-header-btn">退出</button>
+        </template>
+        <template v-else>
+          <button @click="showAuthModal = true" class="ghost-btn">登录</button>
+          <button @click="showAuthModal = true" class="primary-btn">注册</button>
+        </template>
       </div>
     </div>
+    <AuthModal v-model:visible="showAuthModal" @success="onAuthSuccess" />
   </header>
 </template>
+
+<script setup>
+import { ref } from 'vue'
+import { useRouter } from 'vue-router'
+import { useUserStore } from '@/stores/userStore'
+import AuthModal from '@/components/AuthModal.vue'
+
+const router = useRouter()
+const userStore = useUserStore()
+const showAuthModal = ref(false)
+
+function handleLogout() {
+  userStore.logout()
+  router.push('/')
+}
+
+function onAuthSuccess() {
+  // 登录成功后可刷新页面数据
+}
+</script>
 
 <style scoped>
 .app-header {
@@ -69,6 +98,7 @@
 }
 .header-actions {
   display: flex;
+  align-items: center;
   gap: var(--space-3);
 }
 .ghost-btn {
@@ -77,6 +107,7 @@
   border-radius: var(--radius-md);
   padding: 6px 14px;
   font-size: 13px;
+  cursor: pointer;
 }
 .primary-btn {
   background: var(--brand-indigo);
@@ -84,26 +115,37 @@
   color: white;
   padding: 6px 14px;
   font-size: 13px;
+  cursor: pointer;
 }
 .primary-btn:hover {
   background: var(--brand-hover);
 }
-@media (max-width: 640px) {
+.user-avatar {
+  width: 32px;
+  height: 32px;
+  background: var(--bg-surface);
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 14px;
+  font-weight: 510;
+  color: var(--text-primary);
+  text-decoration: none;
+  border: 1px solid var(--border-subtle);
+}
+.logout-header-btn {
+  background: transparent;
+  border: 1px solid var(--border-standard);
+  border-radius: var(--radius-md);
+  padding: 4px 12px;
+  font-size: 12px;
+  color: var(--text-tertiary);
+  cursor: pointer;
+}
+@media (max-width: 768px) {
   .nav-links {
     display: none;
   }
-}
-.router-link-active {
-  color: var(--text-primary);
-  position: relative;
-}
-.router-link-active::after {
-  content: '';
-  position: absolute;
-  bottom: -20px;
-  left: 0;
-  width: 100%;
-  height: 2px;
-  background: var(--brand-indigo);
 }
 </style>
