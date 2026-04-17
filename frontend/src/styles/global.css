@@ -1,0 +1,90 @@
+@import './variables.css';
+
+/* 全局重置 & 基础样式 */
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+html, body {
+  background-color: var(--bg-marketing);
+  color: var(--text-primary);
+  font-family: var(--font-sans);
+  font-feature-settings: "cv01", "ss03";  /* Linear 特色 */
+  font-weight: 400;
+  line-height: 1.5;
+  scroll-behavior: smooth;
+}
+
+body {
+  min-height: 100vh;
+}
+
+/* 标题默认样式 */
+h1, h2, h3, h4, h5, h6 {
+  font-weight: 510;
+  letter-spacing: -0.02em;
+  line-height: 1.2;
+}
+
+h1 {
+  font-size: 48px;
+  letter-spacing: -1.056px;
+}
+
+h2 {
+  font-size: 32px;
+  letter-spacing: -0.704px;
+}
+
+h3 {
+  font-size: 24px;
+  letter-spacing: -0.288px;
+}
+
+/* 链接 */
+a {
+  color: var(--text-secondary);
+  text-decoration: none;
+  transition: color 0.2s ease;
+}
+
+a:hover {
+  color: var(--text-primary);
+}
+
+/* 按钮基本样式（无 class 时用） */
+button {
+  background: rgba(255, 255, 255, 0.02);
+  border: 1px solid var(--border-standard);
+  border-radius: var(--radius-md);
+  padding: 8px 16px;
+  font-family: var(--font-sans);
+  font-weight: 510;
+  font-size: 14px;
+  color: var(--text-secondary);
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+button:hover {
+  background: rgba(255, 255, 255, 0.04);
+  color: var(--text-primary);
+}
+
+/* 滚动条美化 */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+::-webkit-scrollbar-track {
+  background: var(--bg-panel);
+}
+::-webkit-scrollbar-thumb {
+  background: var(--border-solid);
+  border-radius: 4px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: var(--text-quaternary);
+}
