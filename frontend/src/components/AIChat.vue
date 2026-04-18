@@ -46,6 +46,7 @@
 import { ref, nextTick, computed } from 'vue'
 import { useUserStore } from '@/stores/userStore'
 import { useToastStore } from '@/stores/toastStore'
+import api from '@/utils/api'
 
 const userStore = useUserStore()
 const toastStore = useToastStore()
@@ -70,28 +71,19 @@ const inputText = ref('')
 const isTyping = ref(false)
 const messagesContainer = ref(null)
 
-// 模拟后端 API（后续可替换为真实请求）
-async function callMockAPI(question) {
-  await new Promise(resolve => setTimeout(resolve, 800))
-  const lowerQ = question.toLowerCase()
-  if (lowerQ.includes('党参') && lowerQ.includes('功效')) {
+// 调用后端 AI 接口
+async function callBackendAPI(question) {
+  try {
+    const res = await api.post('/ai/chat', { question })
     return {
-      answer: '党参，性平，味甘。主要功效为：<strong>补中益气、健脾益肺</strong>。常用于脾肺气虚、食少倦怠、咳嗽虚喘、气血不足等症状。现代研究表明，党参具有增强免疫力、抗疲劳、调节血压等作用。',
-      refs: ['《中国药典》2020年版', '《中药学》教材']
+      answer: res.answer || '抱歉，我暂时无法回答这个问题。',
+      refs: res.refs || []
     }
-  } else if (lowerQ.includes('黄芪') && lowerQ.includes('产地')) {
+  } catch (err) {
+    console.error('AI 接口调用失败', err)
+    toastStore.addToast('AI 服务暂时不可用，请稍后再试', 'error', 3000)
     return {
-      answer: '黄芪的道地产区主要在<strong>山西、甘肃、内蒙古</strong>。其中山西浑源、甘肃陇西所产黄芪品质最佳，被称为“黄芪之乡”。',
-      refs: ['《中药材生产区划》', '中国道地药材']
-    }
-  } else if (lowerQ.includes('人参') && lowerQ.includes('故事')) {
-    return {
-      answer: '人参的故事可多了～《神农本草经》将其列为上品，称其“主补五脏，安精神，定魂魄”。民间传说人参有灵性，千年人参会变成穿红肚兜的小娃娃，所以挖参人要用红绳绑住参苗，防止它“逃跑”。',
-      refs: ['《本草纲目》', '中国民间故事']
-    }
-  } else {
-    return {
-      answer: `关于“${question}”，我暂时还没学习到足够的信息。你可以试试问“党参的功效”、“黄芪的产地”、“人参的故事”等～`,
+      answer: '网络开小差了，请稍后再试～',
       refs: []
     }
   }
@@ -126,7 +118,7 @@ async function sendMessage() {
 
   isTyping.value = true
   try {
-    const res = await callMockAPI(q)
+    const res = await callBackendAPI(q)
     messages.value.push({
       role: 'assistant',
       content: res.answer,
@@ -134,11 +126,11 @@ async function sendMessage() {
     })
     // 仅在登录时保存问答记录
     if (userStore.isLoggedIn) {
-      userStore.addQaRecord(q, res.answer, res.refs)
+      await userStore.addQaRecord(q, res.answer, res.refs)
     }
     toastStore.addToast('回答已生成', 'success', 2000)
   } catch (err) {
-    toastStore.addToast('网络开小差了，请重试', 'error', 3000)
+    toastStore.addToast('处理失败，请重试', 'error', 3000)
   } finally {
     isTyping.value = false
     await nextTick()
@@ -158,6 +150,7 @@ function openRef(ref) {
 </script>
 
 <style scoped>
+/* 样式保持不变，与原代码相同 */
 .ai-chat-container {
   background: var(--bg-panel);
   border-radius: var(--radius-lg);

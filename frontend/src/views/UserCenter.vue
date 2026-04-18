@@ -33,7 +33,7 @@
           </div>
           <div class="info-form">
             <div class="form-group">
-              <label>用户名</label>
+              <label>昵称</label>
               <input type="text" v-model="profileForm.nickname" placeholder="昵称" />
             </div>
             <button class="save-btn" @click="updateProfile">保存修改</button>
@@ -113,6 +113,7 @@ const avatarPreview = ref(userStore.currentUser?.avatar || null)
 const fileInput = ref(null)
 const showAuthModal = ref(false)
 
+// 收藏的药材列表（从 store 中计算）
 const favoriteHerbs = computed(() => {
   if (!herbStore.herbs.length) return []
   return herbStore.herbs.filter(h => userStore.favoriteHerbIds.includes(h.id))
@@ -123,13 +124,13 @@ const openLoginModal = () => {
   showAuthModal.value = true
 }
 
-// 登录成功后的回调
+// 登录成功后的回调：刷新当前页面数据
 const onLoginSuccess = () => {
-  // 刷新用户信息
   profileForm.value.nickname = userStore.currentUser?.nickname || ''
   avatarPreview.value = userStore.currentUser?.avatar || null
-  // 可以重新加载收藏等数据
-  location.reload() // 简单刷新页面以更新所有状态
+  // 重新加载收藏和历史（store 内部已处理，但手动刷新一次）
+  userStore.fetchFavorites()
+  userStore.fetchQaHistory()
 }
 
 // 触发文件选择
@@ -137,7 +138,7 @@ const triggerFileInput = () => {
   fileInput.value.click()
 }
 
-// 处理文件选择
+// 处理头像上传
 const handleFileChange = (e) => {
   const file = e.target.files[0]
   if (!file) return
@@ -167,6 +168,7 @@ const handleFileChange = (e) => {
   fileInput.value.value = ''
 }
 
+// 更新个人资料（昵称）
 const updateProfile = async () => {
   const res = await userStore.updateProfile({ nickname: profileForm.value.nickname })
   if (res.success) {
@@ -176,6 +178,7 @@ const updateProfile = async () => {
   }
 }
 
+// 修改密码
 const changePassword = async () => {
   if (passwordForm.value.newPassword !== passwordForm.value.confirmPassword) {
     toastStore.addToast('新密码与确认密码不一致', 'error', 2000)
@@ -190,6 +193,7 @@ const changePassword = async () => {
   }
 }
 
+// 清空问答历史
 const clearHistory = () => {
   if (confirm('确定清空所有问答记录吗？')) {
     userStore.clearQaHistory()
@@ -197,18 +201,22 @@ const clearHistory = () => {
   }
 }
 
+// 格式化时间
 const formatTime = (timestamp) => {
   return new Date(timestamp).toLocaleString()
 }
 
+// 跳转到药材详情
 const goToDetail = (id) => {
   router.push(`/herbs/${id}`)
 }
 
 onMounted(async () => {
+  // 确保药材数据已加载
   if (!herbStore.herbs.length) {
     await herbStore.fetchHerbs()
   }
+  // 初始化表单数据
   profileForm.value.nickname = userStore.currentUser?.nickname || ''
   avatarPreview.value = userStore.currentUser?.avatar || null
 })

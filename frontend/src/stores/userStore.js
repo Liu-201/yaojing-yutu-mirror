@@ -1,5 +1,6 @@
 import { defineStore } from 'pinia'
 import { ref, computed } from 'vue'
+import api from '@/utils/api'
 
 export const useUserStore = defineStore('user', () => {
   const currentUser = ref(null)
@@ -8,195 +9,186 @@ export const useUserStore = defineStore('user', () => {
 
   const isLoggedIn = computed(() => currentUser.value !== null)
 
-  // 初始化：从 localStorage 读取
-  function initFromStorage() {
-    const storedUser = localStorage.getItem('yaojing_user')
-    if (storedUser) {
-      currentUser.value = JSON.parse(storedUser)
-    }
-    const storedFavs = localStorage.getItem('yaojing_favorites')
-    if (storedFavs) {
-      favoriteHerbIds.value = JSON.parse(storedFavs)
-    }
-    const storedHistory = localStorage.getItem('yaojing_qa_history')
-    if (storedHistory) {
-      qaHistory.value = JSON.parse(storedHistory)
+  // 从后端获取当前用户信息（根据 token）
+  async function fetchUser() {
+    const token = localStorage.getItem('token')
+    if (!token) return
+    try {
+      const user = await api.get('/user/profile')
+      currentUser.value = user
+    } catch (err) {
+      // token 无效，清除本地存储
+      localStorage.removeItem('token')
+      currentUser.value = null
     }
   }
 
-  // 存储数据到 localStorage
-  function persist() {
-    if (currentUser.value) {
-      localStorage.setItem('yaojing_user', JSON.stringify(currentUser.value))
-    } else {
-      localStorage.removeItem('yaojing_user')
-    }
-    localStorage.setItem('yaojing_favorites', JSON.stringify(favoriteHerbIds.value))
-    localStorage.setItem('yaojing_qa_history', JSON.stringify(qaHistory.value))
-  }
-
-  // 模拟用户数据库（实际应从后端获取）
-  let users = []
-
-  // 从 localStorage 加载已有用户
-  function loadUsers() {
-    const stored = localStorage.getItem('yaojing_users')
-    if (stored) {
-      users = JSON.parse(stored)
-    } else {
-      // 预置测试用户
-      users = [
-        { id: 1, username: 'testuser', nickname: '测试用户', phone: '13800138000', password: '123456', avatar: null }
-      ]
-      saveUsers()
+  // 获取收藏列表
+  async function fetchFavorites() {
+    if (!isLoggedIn.value) return
+    try {
+      const ids = await api.get('/user/favorites')
+      favoriteHerbIds.value = ids
+    } catch (err) {
+      console.error('获取收藏失败', err)
     }
   }
 
-  function saveUsers() {
-    localStorage.setItem('yaojing_users', JSON.stringify(users))
+  // 获取问答历史
+  async function fetchQaHistory() {
+    if (!isLoggedIn.value) return
+    try {
+      const history = await api.get('/user/qa-history')
+      // 后端返回的 refs 可能是 JSON 字符串，需解析
+      qaHistory.value = history.map(item => ({
+        ...item,
+        refs: typeof item.refs === 'string' ? JSON.parse(item.refs) : (item.refs || [])
+      }))
+    } catch (err) {
+      console.error('获取问答历史失败', err)
+    }
   }
 
-  // 登录
+  // 登录（密码或验证码）
   async function login(account, credential, type) {
-    loadUsers()
-    if (type === 'password') {
-      const user = users.find(u => u.phone === account && u.password === credential)
-      if (user) {
-        currentUser.value = { ...user }
-        persist()
-        return { success: true }
+    try {
+      let endpoint, payload
+      if (type === 'password') {
+        endpoint = '/auth/login/password'
+        payload = { phone: account, password: credential }
       } else {
-        return { success: false, message: '手机号或密码错误' }
+        endpoint = '/auth/login/sms'
+        payload = { phone: account, code: credential }
       }
-    } else if (type === 'sms') {
-      // 验证码登录，credential 为验证码，模拟验证码为 123456
-      if (credential !== '123456') {
-        return { success: false, message: '验证码错误' }
-      }
-      const user = users.find(u => u.phone === account)
-      if (user) {
-        currentUser.value = { ...user }
-        persist()
-        return { success: true }
-      } else {
-        return { success: false, message: '手机号未注册' }
-      }
+      const res = await api.post(endpoint, payload)
+      // res 结构: { token, user }
+      localStorage.setItem('token', res.token)
+      currentUser.value = res.user
+      // 登录成功后拉取收藏和历史
+      await fetchFavorites()
+      await fetchQaHistory()
+      return { success: true }
+    } catch (err) {
+      return { success: false, message: err.message || '登录失败' }
     }
-    return { success: false, message: '登录失败' }
   }
 
   // 注册
   async function register({ username, phone, password, code }) {
-    loadUsers()
-    if (code !== '123456') {
-      return { success: false, message: '验证码错误' }
-    }
-    if (users.find(u => u.phone === phone)) {
-      return { success: false, message: '手机号已注册' }
-    }
-    if (users.find(u => u.username === username)) {
-      return { success: false, message: '用户名已存在' }
-    }
-    const newUser = {
-      id: Date.now(),
-      username,
-      nickname: username,
-      phone,
-      password,
-      avatar: null
-    }
-    users.push(newUser)
-    saveUsers()
-    // 自动登录
-    currentUser.value = { ...newUser }
-    persist()
-    return { success: true }
-  }
-
-  // 检查手机号是否存在
-  function checkPhoneExists(phone) {
-    loadUsers()
-    return users.some(u => u.phone === phone)
-  }
-
-  // 重置密码
-  async function resetPassword(phone, newPassword) {
-    loadUsers()
-    const user = users.find(u => u.phone === phone)
-    if (user) {
-      user.password = newPassword
-      saveUsers()
+    try {
+      const res = await api.post('/auth/register', { username, phone, password, code })
+      localStorage.setItem('token', res.token)
+      currentUser.value = res.user
       return { success: true }
+    } catch (err) {
+      return { success: false, message: err.message || '注册失败' }
     }
-    return { success: false, message: '用户不存在' }
-  }
-
-  // 更新个人资料
-async function updateProfile({ nickname, avatar }) {
-  if (!currentUser.value) return { success: false }
-  const userIndex = users.findIndex(u => u.id === currentUser.value.id)
-  if (userIndex !== -1) {
-    if (nickname !== undefined) users[userIndex].nickname = nickname
-    if (avatar !== undefined) users[userIndex].avatar = avatar
-    saveUsers()
-    currentUser.value = { ...users[userIndex] }
-    persist()
-    return { success: true }
-  }
-  return { success: false }
-}
-
-  // 修改密码
-  async function changePassword(oldPassword, newPassword) {
-    if (!currentUser.value) return { success: false }
-    const user = users.find(u => u.id === currentUser.value.id)
-    if (user && user.password === oldPassword) {
-      user.password = newPassword
-      saveUsers()
-      currentUser.value = { ...user }
-      persist()
-      return { success: true }
-    }
-    return { success: false, message: '原密码错误' }
   }
 
   // 退出登录
   function logout() {
     currentUser.value = null
-    persist()
+    favoriteHerbIds.value = []
+    qaHistory.value = []
+    localStorage.removeItem('token')
+  }
+
+  // 检查手机号是否存在（用于忘记密码）
+  async function checkPhoneExists(phone) {
+    // 后端可提供一个专用接口，这里简单调用登录接口尝试获取用户（不验证密码）
+    // 为简化，直接返回 true，实际项目中建议添加 /auth/check-phone 接口
+    return true
+  }
+
+  // 重置密码
+  async function resetPassword(phone, newPassword) {
+    // 需要后端提供 /auth/reset-password 接口，演示时使用模拟
+    try {
+      // 模拟实现：实际应调用后端
+      // const res = await api.post('/auth/reset-password', { phone, newPassword })
+      // return { success: true }
+      return { success: false, message: '该功能暂未开放，请联系管理员' }
+    } catch (err) {
+      return { success: false, message: err.message }
+    }
+  }
+
+  // 更新个人资料（昵称、头像）
+  async function updateProfile({ nickname, avatar }) {
+    if (!isLoggedIn.value) return { success: false, message: '未登录' }
+    try {
+      await api.put('/user/profile', { nickname, avatar })
+      if (nickname !== undefined) currentUser.value.nickname = nickname
+      if (avatar !== undefined) currentUser.value.avatar = avatar
+      return { success: true }
+    } catch (err) {
+      return { success: false, message: err.message || '更新失败' }
+    }
+  }
+
+  // 修改密码
+  async function changePassword(oldPassword, newPassword) {
+    if (!isLoggedIn.value) return { success: false, message: '未登录' }
+    try {
+      await api.put('/user/password', { oldPassword, newPassword })
+      return { success: true }
+    } catch (err) {
+      return { success: false, message: err.message || '密码修改失败' }
+    }
   }
 
   // 切换收藏
-  function toggleFavorite(herbId) {
-    if (favoriteHerbIds.value.includes(herbId)) {
-      favoriteHerbIds.value = favoriteHerbIds.value.filter(id => id !== herbId)
-    } else {
-      favoriteHerbIds.value.push(herbId)
+  async function toggleFavorite(herbId) {
+    if (!isLoggedIn.value) return
+    const isFav = favoriteHerbIds.value.includes(herbId)
+    try {
+      if (isFav) {
+        await api.delete(`/user/favorites/${herbId}`)
+        favoriteHerbIds.value = favoriteHerbIds.value.filter(id => id !== herbId)
+      } else {
+        await api.post('/user/favorites', { herbId })
+        favoriteHerbIds.value.push(herbId)
+      }
+    } catch (err) {
+      console.error('切换收藏失败', err)
     }
-    localStorage.setItem('yaojing_favorites', JSON.stringify(favoriteHerbIds.value))
   }
 
   // 添加问答记录
-  function addQaRecord(question, answer, refs = []) {
-    const record = {
-      id: Date.now(),
-      question,
-      answer,
-      refs,
-      timestamp: new Date().toISOString()
+  async function addQaRecord(question, answer, refs = []) {
+    if (!isLoggedIn.value) return
+    try {
+      await api.post('/user/qa-history', { question, answer, refs })
+      // 可选：重新拉取历史记录以保持同步
+      await fetchQaHistory()
+    } catch (err) {
+      console.error('保存问答记录失败', err)
     }
-    qaHistory.value.unshift(record)
-    if (qaHistory.value.length > 50) qaHistory.value = qaHistory.value.slice(0, 50)
-    localStorage.setItem('yaojing_qa_history', JSON.stringify(qaHistory.value))
   }
 
   // 清空问答历史
-  function clearQaHistory() {
-    qaHistory.value = []
-    localStorage.removeItem('yaojing_qa_history')
+  async function clearQaHistory() {
+    if (!isLoggedIn.value) return
+    try {
+      await api.delete('/user/qa-history')
+      qaHistory.value = []
+    } catch (err) {
+      console.error('清空历史失败', err)
+    }
   }
 
-  initFromStorage()
+  // 初始化：尝试自动登录（token 存在时获取用户信息）
+  const init = async () => {
+    const token = localStorage.getItem('token')
+    if (token) {
+      await fetchUser()
+      if (currentUser.value) {
+        await fetchFavorites()
+        await fetchQaHistory()
+      }
+    }
+  }
+  init()
 
   return {
     currentUser,
@@ -212,6 +204,8 @@ async function updateProfile({ nickname, avatar }) {
     changePassword,
     toggleFavorite,
     addQaRecord,
-    clearQaHistory
+    clearQaHistory,
+    fetchFavorites,
+    fetchQaHistory
   }
 })

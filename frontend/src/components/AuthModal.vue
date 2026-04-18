@@ -156,11 +156,9 @@ const registerCountdown = ref(0)
 const forgotCountdown = ref(0)
 let timer = null
 
-// 模拟发送验证码
+// 模拟发送验证码（演示用，实际应调用后端接口）
 const sendMockCode = async (phone) => {
-  // 模拟网络请求
   await new Promise(resolve => setTimeout(resolve, 500))
-  // 模拟验证码为 123456
   const mockCode = '123456'
   toastStore.addToast(`验证码：${mockCode}（演示用）`, 'info', 3000)
   return true
@@ -260,15 +258,15 @@ const handleRegister = async () => {
   }
 }
 
-// 忘记密码 - 验证手机号
+// 忘记密码 - 验证手机号（调用 userStore 的异步方法）
 const handleForgot = async () => {
   errorMsg.value = ''
-  const exists = userStore.checkPhoneExists(forgotForm.value.phone)
+  const exists = await userStore.checkPhoneExists(forgotForm.value.phone)
   if (!exists) {
     errorMsg.value = '该手机号未注册'
     return
   }
-  // 验证码简单校验
+  // 验证码简单校验（演示固定为 123456）
   if (forgotForm.value.code !== '123456') {
     errorMsg.value = '验证码错误'
     return
@@ -325,6 +323,7 @@ watch(() => props.visible, (val) => {
 </script>
 
 <style scoped>
+/* 样式与原代码完全相同，此处省略重复内容，请保留原有样式 */
 .modal-overlay {
   position: fixed;
   top: 0;
