@@ -1,63 +1,82 @@
 <template>
   <div class="user-center">
-    <div v-if="!userStore.isLoggedIn" class="not-logged-in">
-      <p>请先登录</p>
-      <button @click="showAuthModal = true" class="login-btn">去登录</button>
+    <div class="tabs">
+      <button :class="['tab', { active: activeTab === 'profile' }]" @click="activeTab = 'profile'">个人资料</button>
+      <button :class="['tab', { active: activeTab === 'favorites' }]" @click="activeTab = 'favorites'">我的收藏</button>
+      <button :class="['tab', { active: activeTab === 'history' }]" @click="activeTab = 'history'">问药记录</button>
     </div>
-    <div v-else>
-      <div class="profile-header">
-        <div class="avatar">
-          {{ userStore.currentUser?.nickname?.charAt(0) || 'U' }}
-        </div>
-        <div class="info">
-          <h2>{{ userStore.currentUser?.nickname || userStore.currentUser?.username }}</h2>
-          <p>@{{ userStore.currentUser?.username }}</p>
-        </div>
-        <button @click="handleLogout" class="logout-btn">退出登录</button>
-      </div>
-      <div class="tabs">
-        <button :class="['tab', { active: activeTab === 'favorites' }]" @click="activeTab = 'favorites'">
-          我的收藏
-        </button>
-        <button :class="['tab', { active: activeTab === 'history' }]" @click="activeTab = 'history'">
-          问答历史
-        </button>
-      </div>
-      <div class="tab-content">
-        <div v-if="activeTab === 'favorites'" class="favorites-list">
-          <div v-if="favoriteHerbs.length === 0" class="empty-state">
-            暂无收藏，去 <router-link to="/herbs">药典智库</router-link> 添加吧～
+
+    <div class="tab-content">
+      <!-- 个人资料 -->
+      <div v-if="activeTab === 'profile'" class="profile-section">
+        <div class="avatar-section">
+          <div class="avatar" @click="triggerFileInput">
+            <img v-if="avatarPreview" :src="avatarPreview" />
+            <span v-else>{{ userStore.currentUser?.nickname?.charAt(0) || 'U' }}</span>
           </div>
-          <div v-else class="herb-grid">
-            <HerbCard
-              v-for="herb in favoriteHerbs"
-              :key="herb.id"
-              :id="herb.id"
-              :name="herb.name"
-              :latinName="herb.latinName"
-              :image="herb.image"
-              :effectShort="herb.effectShort"
-              :status="herb.status"
-              @click="goToDetail(herb.id)"
-            />
-          </div>
+          <button class="change-avatar-btn" @click="triggerFileInput">更换头像</button>
+          <input
+            type="file"
+            ref="fileInput"
+            accept="image/jpeg,image/png,image/gif"
+            style="display: none"
+            @change="handleFileChange"
+          />
         </div>
-        <div v-if="activeTab === 'history'" class="history-list">
-          <div v-if="userStore.qaHistory.length === 0" class="empty-state">
-            暂无问答记录，去 <router-link to="/ai">AI问药</router-link> 试试～
+        <div class="info-form">
+          <div class="form-group">
+            <label>用户名</label>
+            <input type="text" v-model="profileForm.nickname" placeholder="昵称" />
           </div>
-          <div v-else>
-            <button @click="clearHistory" class="clear-btn">清空历史</button>
-            <div v-for="record in userStore.qaHistory" :key="record.id" class="history-item">
-              <div class="question">问：{{ record.question }}</div>
-              <div class="answer" v-html="record.answer"></div>
-              <div class="time">{{ formatTime(record.timestamp) }}</div>
+          <button class="save-btn" @click="updateProfile">保存修改</button>
+          <div class="password-change">
+            <h4>修改密码</h4>
+            <div class="form-group">
+              <label>原密码</label>
+              <input type="password" v-model="passwordForm.oldPassword" />
             </div>
+            <div class="form-group">
+              <label>新密码</label>
+              <input type="password" v-model="passwordForm.newPassword" />
+            </div>
+            <div class="form-group">
+              <label>确认密码</label>
+              <input type="password" v-model="passwordForm.confirmPassword" />
+            </div>
+            <button class="save-btn" @click="changePassword">修改密码</button>
           </div>
         </div>
       </div>
+
+      <!-- 我的收藏 -->
+      <div v-if="activeTab === 'favorites'" class="favorites-section">
+        <div v-if="favoriteHerbs.length === 0" class="empty-state">暂无收藏，去药典智库添加吧～</div>
+        <div class="herb-grid">
+          <HerbCard
+            v-for="herb in favoriteHerbs"
+            :key="herb.id"
+            :id="herb.id"
+            :name="herb.name"
+            :latinName="herb.latinName"
+            :image="herb.image"
+            :effectShort="herb.effectShort"
+            :status="herb.status"
+            @click="goToDetail(herb.id)"
+          />
+        </div>
+      </div>
+
+      <!-- 问药记录 -->
+      <div v-if="activeTab === 'history'" class="history-section">
+        <button v-if="userStore.qaHistory.length" class="clear-btn" @click="clearHistory">清空历史</button>
+        <div v-if="userStore.qaHistory.length === 0" class="empty-state">暂无问答记录，去AI问药试试～</div>
+        <div v-for="record in userStore.qaHistory" :key="record.id" class="history-item">
+          <div class="question">问：{{ record.question }}</div>
+          <div class="answer" v-html="record.answer"></div>
+          <div class="time">{{ formatTime(record.timestamp) }}</div>
+        </div>
+      </div>
     </div>
-    <AuthModal v-model:visible="showAuthModal" @success="onAuthSuccess" />
   </div>
 </template>
 
@@ -66,123 +85,115 @@ import { ref, computed, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { useUserStore } from '@/stores/userStore'
 import { useHerbStore } from '@/stores/herbStore'
-import AuthModal from '@/components/AuthModal.vue'
+import { useToastStore } from '@/stores/toastStore'
 import HerbCard from '@/components/HerbCard.vue'
 
 const router = useRouter()
 const userStore = useUserStore()
 const herbStore = useHerbStore()
-const showAuthModal = ref(false)
-const activeTab = ref('favorites')
+const toastStore = useToastStore()
 
-// 收藏的药材详情
+const activeTab = ref('profile')
+const profileForm = ref({ nickname: userStore.currentUser?.nickname || '' })
+const passwordForm = ref({ oldPassword: '', newPassword: '', confirmPassword: '' })
+const avatarPreview = ref(userStore.currentUser?.avatar || null)
+const fileInput = ref(null)
+
 const favoriteHerbs = computed(() => {
   if (!herbStore.herbs.length) return []
   return herbStore.herbs.filter(h => userStore.favoriteHerbIds.includes(h.id))
 })
 
-function handleLogout() {
-  userStore.logout()
-  router.push('/')
+// 触发文件选择
+const triggerFileInput = () => {
+  fileInput.value.click()
 }
 
-function clearHistory() {
-  if (confirm('确定要清空所有问答历史吗？')) {
-    userStore.clearQaHistory()
+// 处理文件选择
+const handleFileChange = (e) => {
+  const file = e.target.files[0]
+  if (!file) return
+
+  // 检查文件类型
+  if (!file.type.startsWith('image/')) {
+    toastStore.addToast('请选择图片文件', 'error', 2000)
+    return
+  }
+
+  // 检查文件大小（限制 2MB）
+  if (file.size > 2 * 1024 * 1024) {
+    toastStore.addToast('图片大小不能超过 2MB', 'error', 2000)
+    return
+  }
+
+  const reader = new FileReader()
+  reader.onload = async (ev) => {
+    const base64 = ev.target.result
+    avatarPreview.value = base64
+    // 立即保存头像到 store
+    const res = await userStore.updateProfile({ avatar: base64 })
+    if (res.success) {
+      toastStore.addToast('头像已更新', 'success', 2000)
+    } else {
+      toastStore.addToast('头像更新失败', 'error', 2000)
+    }
+  }
+  reader.readAsDataURL(file)
+  // 清空 input 值，以便再次选择同一文件
+  fileInput.value.value = ''
+}
+
+const updateProfile = async () => {
+  const res = await userStore.updateProfile({ nickname: profileForm.value.nickname })
+  if (res.success) {
+    toastStore.addToast('个人信息已更新', 'success', 2000)
+  } else {
+    toastStore.addToast('更新失败', 'error', 2000)
   }
 }
 
-function formatTime(timestamp) {
-  const date = new Date(timestamp)
-  return date.toLocaleString()
+const changePassword = async () => {
+  if (passwordForm.value.newPassword !== passwordForm.value.confirmPassword) {
+    toastStore.addToast('新密码与确认密码不一致', 'error', 2000)
+    return
+  }
+  const res = await userStore.changePassword(passwordForm.value.oldPassword, passwordForm.value.newPassword)
+  if (res.success) {
+    toastStore.addToast('密码修改成功', 'success', 2000)
+    passwordForm.value = { oldPassword: '', newPassword: '', confirmPassword: '' }
+  } else {
+    toastStore.addToast(res.message || '原密码错误', 'error', 2000)
+  }
 }
 
-function goToDetail(id) {
+const clearHistory = () => {
+  if (confirm('确定清空所有问答记录吗？')) {
+    userStore.clearQaHistory()
+    toastStore.addToast('已清空', 'success', 2000)
+  }
+}
+
+const formatTime = (timestamp) => {
+  return new Date(timestamp).toLocaleString()
+}
+
+const goToDetail = (id) => {
   router.push(`/herbs/${id}`)
-}
-
-function onAuthSuccess() {
-  // 登录成功后重新加载页面内容
 }
 
 onMounted(async () => {
   if (!herbStore.herbs.length) {
     await herbStore.fetchHerbs()
   }
+  profileForm.value.nickname = userStore.currentUser?.nickname || ''
+  avatarPreview.value = userStore.currentUser?.avatar || null
 })
 </script>
 
 <style scoped>
 .user-center {
   max-width: 1000px;
-  margin: 12vh auto 4vh auto;
-  padding: 0 var(--space-4);
-}
-.not-logged-in {
-  text-align: center;
-  padding: var(--space-12);
-  background: var(--bg-panel);
-  border-radius: var(--radius-lg);
-  border: 1px solid var(--border-standard);
-}
-.not-logged-in p {
-  margin-bottom: var(--space-4);
-  color: var(--text-tertiary);
-}
-.login-btn {
-  background: var(--brand-indigo);
-  border: none;
-  border-radius: var(--radius-md);
-  padding: 8px 20px;
-  color: white;
-  cursor: pointer;
-}
-.profile-header {
-  display: flex;
-  align-items: center;
-  gap: var(--space-4);
-  background: var(--bg-panel);
-  border-radius: var(--radius-lg);
-  border: 1px solid var(--border-standard);
-  padding: var(--space-6);
-  margin-bottom: var(--space-6);
-}
-.avatar {
-  width: 64px;
-  height: 64px;
-  background: var(--bg-surface);
-  border-radius: 50%;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-size: 28px;
-  font-weight: 510;
-  color: var(--text-primary);
-  border: 1px solid var(--border-subtle);
-}
-.info h2 {
-  margin: 0 0 4px 0;
-  font-size: 20px;
-  font-weight: 590;
-}
-.info p {
-  margin: 0;
-  color: var(--text-tertiary);
-  font-size: 13px;
-}
-.logout-btn {
-  margin-left: auto;
-  background: transparent;
-  border: 1px solid var(--border-standard);
-  border-radius: var(--radius-md);
-  padding: 6px 14px;
-  font-size: 13px;
-  color: var(--text-secondary);
-  cursor: pointer;
-}
-.logout-btn:hover {
-  background: rgba(255,255,255,0.05);
-  color: var(--text-primary);
+  margin: 0 auto;
 }
 .tabs {
   display: flex;
@@ -203,37 +214,85 @@ onMounted(async () => {
   color: var(--text-primary);
   border-bottom: 2px solid var(--brand-indigo);
 }
-.favorites-list {
-  min-height: 300px;
+.profile-section {
+  display: flex;
+  gap: var(--space-8);
 }
-.herb-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
-  gap: var(--space-4);
-}
-.empty-state {
+.avatar-section {
   text-align: center;
-  padding: var(--space-8);
-  color: var(--text-tertiary);
 }
-.empty-state a {
-  color: var(--brand-accent);
-  text-decoration: underline;
+.avatar {
+  width: 100px;
+  height: 100px;
+  background: var(--bg-surface);
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 40px;
+  font-weight: 590;
+  color: var(--text-primary);
+  border: 1px solid var(--border-subtle);
+  cursor: pointer;
+  overflow: hidden;
 }
-.history-list {
-  max-height: 500px;
-  overflow-y: auto;
+.avatar img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
 }
-.clear-btn {
-  background: rgba(255,255,255,0.02);
+.change-avatar-btn {
+  margin-top: 12px;
+  background: transparent;
   border: 1px solid var(--border-standard);
   border-radius: var(--radius-md);
   padding: 4px 12px;
   font-size: 12px;
-  margin-bottom: var(--space-4);
   cursor: pointer;
 }
-.history-item {
+.info-form {
+  flex: 1;
+}
+.form-group {
+  margin-bottom: var(--space-4);
+}
+.form-group label {
+  display: block;
+  font-size: 13px;
+  font-weight: 510;
+  margin-bottom: 6px;
+}
+.form-group input {
+  width: 100%;
+  background: rgba(255,255,255,0.02);
+  border: 1px solid var(--border-standard);
+  border-radius: var(--radius-md);
+  padding: 8px 12px;
+  color: var(--text-primary);
+}
+.save-btn {
+  background: var(--brand-indigo);
+  border: none;
+  border-radius: var(--radius-md);
+  padding: 8px 16px;
+  color: white;
+  cursor: pointer;
+}
+.password-change {
+  margin-top: var(--space-8);
+  padding-top: var(--space-6);
+  border-top: 1px solid var(--border-subtle);
+}
+.password-change h4 {
+  margin-bottom: var(--space-4);
+  font-size: 16px;
+}
+.favorites-section .herb-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+  gap: var(--space-4);
+}
+.history-section .history-item {
   background: var(--bg-surface);
   border: 1px solid var(--border-subtle);
   border-radius: var(--radius-lg);
@@ -243,17 +302,28 @@ onMounted(async () => {
 .question {
   font-weight: 590;
   margin-bottom: 8px;
-  color: var(--text-primary);
 }
 .answer {
   font-size: 14px;
   color: var(--text-secondary);
-  line-height: 1.5;
   margin-bottom: 8px;
 }
 .time {
   font-size: 11px;
   color: var(--text-quaternary);
   text-align: right;
+}
+.clear-btn {
+  background: rgba(255,255,255,0.02);
+  border: 1px solid var(--border-standard);
+  border-radius: var(--radius-md);
+  padding: 4px 12px;
+  margin-bottom: var(--space-4);
+  cursor: pointer;
+}
+.empty-state {
+  text-align: center;
+  padding: var(--space-8);
+  color: var(--text-tertiary);
 }
 </style>

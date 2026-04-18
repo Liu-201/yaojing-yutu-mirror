@@ -3,10 +3,10 @@
     <div class="chat-messages" ref="messagesContainer">
       <div v-for="(msg, idx) in messages" :key="idx" :class="['message', msg.role]">
         <div class="message-avatar">
-          {{ msg.role === 'user' ? '👤' : '🌿' }}
+          {{ msg.role === 'user' ? (userStore.currentUser?.nickname?.charAt(0) || '👤') : '🌿' }}
         </div>
         <div class="message-content">
-          <div class="message-name">{{ msg.role === 'user' ? '我' : '药境小智' }}</div>
+          <div class="message-name">{{ msg.role === 'user' ? displayName : '药境小智' }}</div>
           <div class="message-text" v-html="msg.content"></div>
           <div v-if="msg.refs && msg.refs.length" class="message-refs">
             <span>参考：</span>
@@ -14,18 +14,21 @@
           </div>
         </div>
       </div>
-      <!-- 骨架屏加载效果，替代原来的打字指示器 -->
       <div v-if="isTyping" class="message assistant">
         <div class="message-avatar">🌿</div>
-        <div class="message-content skeleton-wrapper">
-          <SkeletonLoader />
+        <div class="message-content">
+          <div class="message-name">药境小智</div>
+          <div class="typing-indicator">
+            <span></span><span></span><span></span>
+          </div>
         </div>
       </div>
     </div>
     <div class="chat-input-area">
       <textarea
+        ref="textareaRef"
         v-model="inputText"
-        @keydown.enter.prevent="sendMessage"
+        @keydown="handleKeydown"
         placeholder="问点什么吧，例如：党参的主要功效？"
         rows="2"
       ></textarea>
@@ -40,13 +43,21 @@
 </template>
 
 <script setup>
-import { ref, nextTick } from 'vue'
+import { ref, nextTick, computed } from 'vue'
 import { useUserStore } from '@/stores/userStore'
 import { useToastStore } from '@/stores/toastStore'
-import SkeletonLoader from './SkeletonLoader.vue'
 
 const userStore = useUserStore()
 const toastStore = useToastStore()
+const textareaRef = ref(null)
+
+// 显示名称：登录用户用昵称，否则用“访客”
+const displayName = computed(() => {
+  if (userStore.isLoggedIn && userStore.currentUser?.nickname) {
+    return userStore.currentUser.nickname
+  }
+  return '访客'
+})
 
 const messages = ref([
   {
@@ -86,11 +97,24 @@ async function callMockAPI(question) {
   }
 }
 
+// 键盘处理：回车键换行（不发送），只有点击发送按钮才发送
+function handleKeydown(e) {
+  if (e.key === 'Enter' && !e.shiftKey) {
+    e.preventDefault()
+    const textarea = textareaRef.value
+    const start = textarea.selectionStart
+    const end = textarea.selectionEnd
+    const value = inputText.value
+    inputText.value = value.substring(0, start) + '\n' + value.substring(end)
+    nextTick(() => {
+      textarea.selectionStart = textarea.selectionEnd = start + 1
+    })
+  }
+}
+
 async function sendMessage() {
   const q = inputText.value.trim()
   if (!q || isTyping.value) return
-
-  // 添加用户消息
   messages.value.push({
     role: 'user',
     content: q,
@@ -108,18 +132,12 @@ async function sendMessage() {
       content: res.answer,
       refs: res.refs || []
     })
-    // 如果用户已登录，保存问答记录
     if (userStore.isLoggedIn) {
       userStore.addQaRecord(q, res.answer, res.refs)
     }
     toastStore.addToast('回答已生成', 'success', 2000)
   } catch (err) {
-    messages.value.push({
-      role: 'assistant',
-      content: '哎呀，网络开小差了，请稍后再试～',
-      refs: []
-    })
-    toastStore.addToast('网络错误，请重试', 'error', 3000)
+    toastStore.addToast('网络开小差了，请重试', 'error', 3000)
   } finally {
     isTyping.value = false
     await nextTick()
@@ -134,7 +152,6 @@ function scrollToBottom() {
 }
 
 function openRef(ref) {
-  // 使用 Toast 提示，替代 alert
   toastStore.addToast(`参考来源：${ref}`, 'info', 2000)
 }
 </script>
@@ -165,6 +182,7 @@ function openRef(ref) {
 .message.user {
   align-self: flex-end;
   flex-direction: row-reverse;
+  text-align: right; /* 用户消息整体右对齐 */
 }
 .message-avatar {
   width: 32px;
@@ -176,6 +194,7 @@ function openRef(ref) {
   justify-content: center;
   font-size: 18px;
   border: 1px solid var(--border-standard);
+  flex-shrink: 0;
 }
 .message.user .message-avatar {
   background: var(--brand-indigo);
@@ -200,14 +219,17 @@ function openRef(ref) {
 }
 .message.user .message-name {
   color: rgba(255,255,255,0.8);
+  text-align: right; /* 用户名称右对齐 */
 }
 .message-text {
   font-size: 14px;
   line-height: 1.5;
   color: var(--text-primary);
+  text-align: left; /* 文本默认左对齐 */
 }
 .message.user .message-text {
   color: white;
+  text-align: left; /* 用户消息文本仍左对齐，但整体容器右对齐 */
 }
 .message-refs {
   margin-top: var(--space-2);
@@ -220,11 +242,23 @@ function openRef(ref) {
   text-decoration: underline;
   cursor: pointer;
 }
-/* 骨架屏包裹样式 */
-.skeleton-wrapper {
-  background: transparent !important;
-  padding: 0 !important;
-  border: none !important;
+.typing-indicator {
+  display: flex;
+  gap: 4px;
+  padding: 4px 0;
+}
+.typing-indicator span {
+  width: 6px;
+  height: 6px;
+  background: var(--text-tertiary);
+  border-radius: 50%;
+  animation: blink 1.4s infinite;
+}
+.typing-indicator span:nth-child(2) { animation-delay: 0.2s; }
+.typing-indicator span:nth-child(3) { animation-delay: 0.4s; }
+@keyframes blink {
+  0%, 60%, 100% { opacity: 0.4; transform: scale(1); }
+  30% { opacity: 1; transform: scale(1.2); }
 }
 .chat-input-area {
   display: flex;
@@ -242,7 +276,7 @@ function openRef(ref) {
   font-family: var(--font-sans);
   font-size: 14px;
   color: var(--text-primary);
-  resize: vertical;
+  resize: none;
 }
 .chat-input-area textarea:focus {
   outline: none;
