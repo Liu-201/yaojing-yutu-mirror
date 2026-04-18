@@ -35,17 +35,25 @@
 
     <AppFooter />
     <ToastContainer />
+    
+    <!-- 登录/注册弹窗 -->
+    <AuthModal v-model:visible="showAuthModal" @success="onLoginSuccess" />
   </div>
 </template>
 
 <script setup>
-import { onMounted } from 'vue'
+import { ref, onMounted } from 'vue'
+import { useRouter } from 'vue-router'
 import DotField from '@/components/DotField.vue'
 import PillNav from '@/components/PillNav.vue'
 import AppFooter from '@/components/AppFooter.vue'
 import ToastContainer from '@/components/ToastContainer.vue'
+import AuthModal from '@/components/AuthModal.vue'
 import { useReveal } from '@/composables/useReveal'
 import logoUrl from '@/assets/logo.svg'
+
+const router = useRouter()
+const showAuthModal = ref(false)
 
 const navItems = [
   { label: '首页', href: '/' },
@@ -55,8 +63,23 @@ const navItems = [
   { label: 'AI问药', href: '/ai' }
 ]
 
+// 监听全局登录弹窗事件（由路由守卫触发）
+const handleOpenAuthModal = () => {
+  showAuthModal.value = true
+}
+
+// 登录成功后的回调：重定向到之前拦截的目标页面
+const onLoginSuccess = () => {
+  const redirectPath = sessionStorage.getItem('redirectAfterLogin')
+  if (redirectPath) {
+    sessionStorage.removeItem('redirectAfterLogin')
+    router.push(redirectPath)
+  }
+}
+
 onMounted(() => {
   useReveal()
+  window.addEventListener('open-auth-modal', handleOpenAuthModal)
 })
 </script>
 

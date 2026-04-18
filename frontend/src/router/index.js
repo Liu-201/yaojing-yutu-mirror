@@ -67,20 +67,30 @@ const router = createRouter({
   }
 })
 
-// 需要登录才能访问的页面路径前缀
-const protectedRoutes = ['/user', '/user/profile', '/user/favorites', '/user/history']
+// 需要登录才能访问的页面路径（支持字符串精确匹配和正则表达式）
+const protectedRoutes = [
+  { pattern: /^\/herbs\/\d+$/, name: 'herb-detail' },  // 药材详情页
+  { pattern: /^\/ai$/, name: 'ai-question' },          // AI问药页
+  { pattern: /^\/user/, name: 'user-center' }          // 用户中心及其子页面
+]
 
 // 全局前置守卫：检查登录状态
 router.beforeEach((to, from, next) => {
-  const isProtected = protectedRoutes.some(route => to.path.startsWith(route))
-  if (isProtected) {
-    const userStr = localStorage.getItem('yaojing_user')
-    if (!userStr) {
-      // 未登录，触发全局事件打开登录弹窗
-      window.dispatchEvent(new CustomEvent('open-auth-modal'))
-      next({ path: '/' })
-      return
-    }
+  const userStore = useUserStore()
+  const protectedPaths = [
+    { pattern: /^\/herbs\/\d+$/, requiresAuth: true },
+    { path: '/ai', requiresAuth: true }
+  ]
+  const requiresAuth = protectedPaths.some(rule => {
+    if (rule.pattern) return rule.pattern.test(to.path)
+    if (rule.path) return to.path === rule.path
+    return false
+  })
+  if (requiresAuth && !userStore.isLoggedIn) {
+    sessionStorage.setItem('redirectAfterLogin', to.fullPath)
+    window.dispatchEvent(new CustomEvent('open-auth-modal'))
+    next(false)
+    return
   }
   next()
 })

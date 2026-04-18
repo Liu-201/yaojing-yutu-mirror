@@ -60,22 +60,40 @@ import { useHerbStore } from '@/stores/herbStore'
 import StatusBadge from '@/components/StatusBadge.vue'
 import { computed } from 'vue'
 import { useUserStore } from '@/stores/userStore'
+import { useToastStore } from '@/stores/toastStore'
+
 
 const route = useRoute()
 const router = useRouter()
+const toastStore = useToastStore()
 const herbStore = useHerbStore()
 const herb = ref(null)
 const userStore = useUserStore()
 const isFavorited = computed(() => userStore.favoriteHerbIds.includes(herb.value?.id))
 
 onMounted(async () => {
+  // 检查登录状态，未登录则触发弹窗并返回首页
+  if (!userStore.isLoggedIn) {
+    sessionStorage.setItem('redirectAfterLogin', router.currentRoute.value.fullPath)
+    window.dispatchEvent(new CustomEvent('open-auth-modal'))
+    router.push('/')
+    return
+  }
   const id = parseInt(route.params.id)
   await herbStore.fetchHerbs()
   herb.value = herbStore.herbs.find(h => h.id === id)
 })
+
 function toggleFavorite() {
+  if (!userStore.isLoggedIn) {
+    toastStore.addToast('请先登录再收藏', 'info', 2000)
+    window.dispatchEvent(new CustomEvent('open-auth-modal'))
+    return
+  }
   if (herb.value) {
     userStore.toggleFavorite(herb.value.id)
+    const isFav = userStore.favoriteHerbIds.includes(herb.value.id)
+    toastStore.addToast(isFav ? '已添加收藏' : '已取消收藏', 'success', 1500)
   }
 }
 </script>

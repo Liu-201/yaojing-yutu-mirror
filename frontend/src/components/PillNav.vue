@@ -90,9 +90,6 @@
         </li>
       </ul>
     </div>
-
-    <!-- 登录/注册弹窗 -->
-    <AuthModal v-model:visible="showAuthModal" @success="onAuthSuccess" />
   </div>
 </template>
 
@@ -101,7 +98,6 @@ import { ref, onMounted, onBeforeUnmount, computed, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import gsap from 'gsap'
 import { useUserStore } from '@/stores/userStore'
-import AuthModal from '@/components/AuthModal.vue'
 
 const props = defineProps({
   logo: { type: String, required: true },
@@ -137,7 +133,6 @@ const logoRef = ref(null)
 // 用户下拉菜单
 const dropdownOpen = ref(false)
 const dropdownRef = ref(null)
-const showAuthModal = ref(false)
 
 const cssVars = computed(() => ({
   '--base': props.baseColor,
@@ -295,11 +290,9 @@ const handleLogout = () => {
   closeDropdown()
   router.push('/')
 }
+// 打开登录弹窗：触发全局事件，由 App.vue 统一处理
 const openLoginModal = () => {
-  showAuthModal.value = true
-}
-const onAuthSuccess = () => {
-  // 登录成功后可刷新页面数据
+  window.dispatchEvent(new CustomEvent('open-auth-modal'))
 }
 
 // 点击外部关闭下拉菜单
@@ -307,11 +300,6 @@ const handleClickOutside = (e) => {
   if (dropdownRef.value && !dropdownRef.value.contains(e.target)) {
     dropdownOpen.value = false
   }
-}
-
-// 监听全局事件（用于路由守卫触发登录）
-const handleOpenAuthModal = () => {
-  showAuthModal.value = true
 }
 
 // 初始加载动画
@@ -338,7 +326,6 @@ onMounted(() => {
   initPillAnimations()
   window.addEventListener('resize', handleResize)
   document.addEventListener('click', handleClickOutside)
-  window.addEventListener('open-auth-modal', handleOpenAuthModal)
   if (document.fonts?.ready) {
     document.fonts.ready.then(initPillAnimations)
   }
@@ -347,7 +334,6 @@ onMounted(() => {
 onBeforeUnmount(() => {
   window.removeEventListener('resize', handleResize)
   document.removeEventListener('click', handleClickOutside)
-  window.removeEventListener('open-auth-modal', handleOpenAuthModal)
   tlRefs.value.forEach(tl => tl?.kill())
   if (logoTweenRef.value) logoTweenRef.value.kill()
 })
