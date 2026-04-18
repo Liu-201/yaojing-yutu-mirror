@@ -42,7 +42,8 @@
         <template v-if="userStore.isLoggedIn">
           <div class="user-dropdown" ref="dropdownRef">
             <div class="user-avatar" @click.stop="toggleDropdown">
-              {{ userStore.currentUser?.nickname?.charAt(0) || userStore.currentUser?.username?.charAt(0) }}
+                <img v-if="userStore.currentUser?.avatar" :src="userStore.currentUser.avatar" />
+                <span v-else>{{ userStore.currentUser?.nickname?.charAt(0) || userStore.currentUser?.username?.charAt(0) }}</span>
             </div>
             <div v-if="dropdownOpen" class="dropdown-menu">
               <div class="dropdown-header">Hi, {{ userStore.currentUser?.nickname || userStore.currentUser?.username }}</div>
@@ -536,6 +537,12 @@ watch(() => props.items, () => {
   color: white;
   cursor: pointer;
   transition: transform 0.2s;
+}
+.user-avatar img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  border-radius: 50%;
 }
 .user-avatar:hover {
   transform: scale(1.05);
