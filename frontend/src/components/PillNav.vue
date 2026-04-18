@@ -498,7 +498,7 @@ watch(() => props.items, () => {
 .auth-btn.login-btn {
   background: var(--brand-indigo, #5e6ad2);
   border: none;
-  border-radius: 9999px; 
+  border-radius: 9999px;
   height: var(--nav-h, 42px);
   padding: 0 18px;
   font-size: 14px;

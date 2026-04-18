@@ -62,7 +62,7 @@ const displayName = computed(() => {
 const messages = ref([
   {
     role: 'assistant',
-    content: '你好呀！我是药境小智，可以问我任何关于中药材的问题，比如产地、功效、用法、历史典故等～',
+    content: '你好呀！我是药境小智，可以问我任何关于中药材的问题，比如产地、功效、用法、历史典故等～' + (userStore.isLoggedIn ? '' : ' 登录后可以保存问答记录哦。'),
     refs: []
   }
 ])
@@ -132,6 +132,7 @@ async function sendMessage() {
       content: res.answer,
       refs: res.refs || []
     })
+    // 仅在登录时保存问答记录
     if (userStore.isLoggedIn) {
       userStore.addQaRecord(q, res.answer, res.refs)
     }
@@ -182,7 +183,7 @@ function openRef(ref) {
 .message.user {
   align-self: flex-end;
   flex-direction: row-reverse;
-  text-align: right; /* 用户消息整体右对齐 */
+  text-align: right;
 }
 .message-avatar {
   width: 32px;
@@ -219,17 +220,17 @@ function openRef(ref) {
 }
 .message.user .message-name {
   color: rgba(255,255,255,0.8);
-  text-align: right; /* 用户名称右对齐 */
+  text-align: right;
 }
 .message-text {
   font-size: 14px;
   line-height: 1.5;
   color: var(--text-primary);
-  text-align: left; /* 文本默认左对齐 */
+  text-align: left;
 }
 .message.user .message-text {
   color: white;
-  text-align: left; /* 用户消息文本仍左对齐，但整体容器右对齐 */
+  text-align: left;
 }
 .message-refs {
   margin-top: var(--space-2);

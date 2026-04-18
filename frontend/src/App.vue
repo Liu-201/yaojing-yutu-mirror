@@ -36,14 +36,13 @@
     <AppFooter />
     <ToastContainer />
     
-    <!-- 登录/注册弹窗 -->
+    <!-- 登录/注册弹窗（仅在用户主动点击登录或访问个人中心时触发） -->
     <AuthModal v-model:visible="showAuthModal" @success="onLoginSuccess" />
   </div>
 </template>
 
 <script setup>
 import { ref, onMounted } from 'vue'
-import { useRouter } from 'vue-router'
 import DotField from '@/components/DotField.vue'
 import PillNav from '@/components/PillNav.vue'
 import AppFooter from '@/components/AppFooter.vue'
@@ -52,7 +51,6 @@ import AuthModal from '@/components/AuthModal.vue'
 import { useReveal } from '@/composables/useReveal'
 import logoUrl from '@/assets/logo.svg'
 
-const router = useRouter()
 const showAuthModal = ref(false)
 
 const navItems = [
@@ -63,18 +61,15 @@ const navItems = [
   { label: 'AI问药', href: '/ai' }
 ]
 
-// 监听全局登录弹窗事件（由路由守卫触发）
+// 监听全局登录弹窗事件（例如从个人中心组件触发）
 const handleOpenAuthModal = () => {
   showAuthModal.value = true
 }
 
-// 登录成功后的回调：重定向到之前拦截的目标页面
+// 登录成功后的回调（可选，用于刷新用户状态）
 const onLoginSuccess = () => {
-  const redirectPath = sessionStorage.getItem('redirectAfterLogin')
-  if (redirectPath) {
-    sessionStorage.removeItem('redirectAfterLogin')
-    router.push(redirectPath)
-  }
+  // 登录成功后，可刷新当前页面或重新加载用户数据
+  location.reload()
 }
 
 onMounted(() => {

@@ -7,6 +7,7 @@ import TimeSpace from '@/views/TimeSpace.vue'
 import AIQuestion from '@/views/AIQuestion.vue'
 import TraceCode from '@/views/TraceCode.vue'
 import UserCenter from '@/views/UserCenter.vue'
+import { useUserStore } from '@/stores/userStore'
 
 const routes = [
   {
@@ -67,31 +68,21 @@ const router = createRouter({
   }
 })
 
-// 需要登录才能访问的页面路径（支持字符串精确匹配和正则表达式）
-const protectedRoutes = [
-  { pattern: /^\/herbs\/\d+$/, name: 'herb-detail' },  // 药材详情页
-  { pattern: /^\/ai$/, name: 'ai-question' },          // AI问药页
-  { pattern: /^\/user/, name: 'user-center' }          // 用户中心及其子页面
-]
-
-// 全局前置守卫：检查登录状态
+// 全局前置守卫：只对 /user 开头的路径检查登录状态
 router.beforeEach((to, from, next) => {
   const userStore = useUserStore()
-  const protectedPaths = [
-    { pattern: /^\/herbs\/\d+$/, requiresAuth: true },
-    { path: '/ai', requiresAuth: true }
-  ]
-  const requiresAuth = protectedPaths.some(rule => {
-    if (rule.pattern) return rule.pattern.test(to.path)
-    if (rule.path) return to.path === rule.path
-    return false
-  })
-  if (requiresAuth && !userStore.isLoggedIn) {
+  // 判断是否以 /user 开头（个人中心相关页面）
+  const isUserPage = to.path.startsWith('/user')
+  if (isUserPage && !userStore.isLoggedIn) {
+    // 保存目标路径，登录后跳转
     sessionStorage.setItem('redirectAfterLogin', to.fullPath)
+    // 触发登录弹窗
     window.dispatchEvent(new CustomEvent('open-auth-modal'))
+    // 阻止导航，不跳转
     next(false)
     return
   }
+  // 其他页面直接放行
   next()
 })
 
