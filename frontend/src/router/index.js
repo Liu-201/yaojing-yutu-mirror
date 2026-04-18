@@ -47,7 +47,7 @@ const routes = [
   path: '/user',
   name: 'UserCenter',
   component: () => import('@/views/UserCenter.vue')
-}
+  }
 
 ]
 

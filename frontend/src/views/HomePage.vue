@@ -5,7 +5,7 @@
       <p class="hero-sub">道地药材生态溯源与知识问答平台</p>
       <div class="hero-buttons">
         <router-link to="/herbs" class="btn-primary">探索药典</router-link>
-<router-link to="/map" class="btn-ghost">舆图寻药</router-link>
+        <router-link to="/map" class="btn-ghost">舆图寻药</router-link>
         <button class="btn-ghost">AI 问药</button>
       </div>
     </section>

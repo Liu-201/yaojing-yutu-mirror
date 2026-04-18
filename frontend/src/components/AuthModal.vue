@@ -90,7 +90,7 @@ function close() {
   padding: var(--space-6);
   position: relative;
   box-shadow: 0 20px 35px rgba(0,0,0,0.5);
-  margin: auto;
+  margin: 0;
 }
 .close-btn {
   position: absolute;
