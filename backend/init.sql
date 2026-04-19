@@ -1,3 +1,4 @@
+-- 创建数据库
 CREATE DATABASE IF NOT EXISTS yaojing;
 USE yaojing;
 
@@ -30,3 +31,7 @@ CREATE TABLE IF NOT EXISTS qa_history (
   refs TEXT,
   created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
+
+-- 插入一个测试用户（密码为 123456，bcrypt 加密示例）
+INSERT INTO users (username, nickname, phone, password) 
+VALUES ('testuser', '测试用户', '13800138000', '$2a$10$N9qo8uLOickgx2ZMRZoMy.Mr5u8qRrXZ6Q6Mq8Qq8Qq8Qq8Qq8Qq');

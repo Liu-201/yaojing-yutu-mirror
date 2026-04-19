@@ -290,6 +290,7 @@ const handleLogout = () => {
   userStore.logout()
   closeDropdown()
   router.push('/')
+  location.reload()
 }
 // 打开登录弹窗：触发全局事件，由 App.vue 统一处理
 const openLoginModal = () => {
