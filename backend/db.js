@@ -20,12 +20,56 @@ const pool = mysql.createPool({
   connectionLimit: 10
 });
 
+// 自动创建表（如果不存在）
+const createTables = async () => {
+  const connection = await pool.promise().getConnection();
+  try {
+    await connection.query(`
+      CREATE TABLE IF NOT EXISTS users (
+        id INT PRIMARY KEY AUTO_INCREMENT,
+        username VARCHAR(50) NOT NULL UNIQUE,
+        nickname VARCHAR(50),
+        phone VARCHAR(20) NOT NULL UNIQUE,
+        password VARCHAR(255) NOT NULL,
+        avatar TEXT,
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+      )
+    `);
+    await connection.query(`
+      CREATE TABLE IF NOT EXISTS favorites (
+        id INT PRIMARY KEY AUTO_INCREMENT,
+        user_id INT NOT NULL,
+        herb_id INT NOT NULL,
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        UNIQUE KEY unique_favorite (user_id, herb_id)
+      )
+    `);
+    await connection.query(`
+      CREATE TABLE IF NOT EXISTS qa_history (
+        id INT PRIMARY KEY AUTO_INCREMENT,
+        user_id INT NOT NULL,
+        question TEXT NOT NULL,
+        answer TEXT NOT NULL,
+        refs TEXT,
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+      )
+    `);
+    console.log('✅ 数据库表已检查/创建');
+  } catch (err) {
+    console.error('❌ 创建表失败:', err);
+  } finally {
+    connection.release();
+  }
+};
+
+// 测试连接并建表
 pool.getConnection((err, connection) => {
   if (err) {
     console.error('❌ 数据库连接失败，完整错误:', JSON.stringify(err, Object.getOwnPropertyNames(err)));
   } else {
     console.log('✅ 数据库连接成功');
     connection.release();
+    createTables(); // 连接成功后自动建表
   }
 });
 
