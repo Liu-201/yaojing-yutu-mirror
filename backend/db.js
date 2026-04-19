@@ -3,7 +3,13 @@ const dotenv = require('dotenv');
 
 dotenv.config();
 
-// 创建连接池，使用 Railway 自动注入的 MySQL 环境变量
+console.log('🔍 数据库环境变量检查:');
+console.log('MYSQLHOST:', process.env.MYSQLHOST);
+console.log('MYSQLPORT:', process.env.MYSQLPORT);
+console.log('MYSQLUSER:', process.env.MYSQLUSER);
+console.log('MYSQLDATABASE:', process.env.MYSQLDATABASE);
+console.log('MYSQLPASSWORD:', process.env.MYSQLPASSWORD ? '已设置' : '未设置');
+
 const pool = mysql.createPool({
   host: process.env.MYSQLHOST,
   port: process.env.MYSQLPORT,
@@ -11,14 +17,12 @@ const pool = mysql.createPool({
   password: process.env.MYSQLPASSWORD,
   database: process.env.MYSQLDATABASE,
   waitForConnections: true,
-  connectionLimit: 10,
-  queueLimit: 0
+  connectionLimit: 10
 });
 
-// 添加一个简单的测试连接函数（可选，用于日志）
 pool.getConnection((err, connection) => {
   if (err) {
-    console.error('❌ 数据库连接失败:', err.message);
+    console.error('❌ 数据库连接失败，完整错误:', JSON.stringify(err, Object.getOwnPropertyNames(err)));
   } else {
     console.log('✅ 数据库连接成功');
     connection.release();
