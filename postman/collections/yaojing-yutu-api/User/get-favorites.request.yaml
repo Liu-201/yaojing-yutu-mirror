@@ -1,0 +1,10 @@
+$kind: http-request
+name: GET Get Favorites
+method: GET
+url: '{{baseUrl}}/user/favorites'
+order: 4000
+auth:
+  type: bearer
+  credentials:
+    - key: token
+      value: '{{token}}'

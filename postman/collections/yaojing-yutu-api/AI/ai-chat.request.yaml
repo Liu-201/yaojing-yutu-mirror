@@ -1,0 +1,14 @@
+$kind: http-request
+name: POST AI Chat
+method: POST
+url: '{{baseUrl}}/ai/chat'
+order: 1000
+headers:
+  - key: Content-Type
+    value: application/json
+body:
+  type: json
+  content: |-
+    {
+      "question": "黄芪的功效与主治是什么？"
+    }

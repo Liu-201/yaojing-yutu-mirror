@@ -1,0 +1,21 @@
+$kind: http-request
+name: POST Save QA Record
+method: POST
+url: '{{baseUrl}}/user/qa-history'
+order: 8000
+headers:
+  - key: Content-Type
+    value: application/json
+auth:
+  type: bearer
+  credentials:
+    - key: token
+      value: '{{token}}'
+body:
+  type: json
+  content: |-
+    {
+      "question": "人参有什么功效？",
+      "answer": "人参具有大补元气...",
+      "refs": []
+    }

@@ -1,0 +1,6 @@
+$kind: collection
+name: 药境舆图 API
+description: 药境舆图（Yaojing Yutu）后端 API 集合，包含认证、用户管理和 AI 问答接口。
+variables:
+  - key: baseUrl
+    value: 'http://localhost:5000/api'

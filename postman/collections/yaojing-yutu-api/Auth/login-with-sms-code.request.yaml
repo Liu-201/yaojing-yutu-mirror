@@ -1,0 +1,15 @@
+$kind: http-request
+name: POST Login with SMS Code
+method: POST
+url: '{{baseUrl}}/auth/login/sms'
+order: 4000
+headers:
+  - key: Content-Type
+    value: application/json
+body:
+  type: json
+  content: |-
+    {
+      "phone": "13800138000",
+      "code": "123456"
+    }

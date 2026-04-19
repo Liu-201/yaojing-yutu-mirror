@@ -1,0 +1,10 @@
+$kind: http-request
+name: DELETE Remove Favorite
+method: DELETE
+url: '{{baseUrl}}/user/favorites/{{herbId}}'
+order: 6000
+auth:
+  type: bearer
+  credentials:
+    - key: token
+      value: '{{token}}'
