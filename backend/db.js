@@ -4,18 +4,18 @@ const dotenv = require('dotenv');
 dotenv.config();
 
 console.log('🔍 数据库环境变量检查:');
-console.log('MYSQLHOST:', process.env.MYSQLHOST);
-console.log('MYSQLPORT:', process.env.MYSQLPORT);
-console.log('MYSQLUSER:', process.env.MYSQLUSER);
-console.log('MYSQLDATABASE:', process.env.MYSQLDATABASE);
-console.log('MYSQLPASSWORD:', process.env.MYSQLPASSWORD ? '已设置' : '未设置');
+console.log('DB_HOST:', process.env.DB_HOST);
+console.log('DB_PORT:', process.env.DB_PORT);
+console.log('DB_USER:', process.env.DB_USER);
+console.log('DB_NAME:', process.env.DB_NAME);
+console.log('DB_PASSWORD:', process.env.DB_PASSWORD ? '已设置' : '未设置');
 
 const pool = mysql.createPool({
-  host: process.env.MYSQLHOST,
-  port: process.env.MYSQLPORT,
-  user: process.env.MYSQLUSER,
-  password: process.env.MYSQLPASSWORD,
-  database: process.env.MYSQLDATABASE,
+  host: process.env.DB_HOST,
+  port: process.env.DB_PORT,
+  user: process.env.DB_USER,
+  password: process.env.DB_PASSWORD,
+  database: process.env.DB_NAME,
   waitForConnections: true,
   connectionLimit: 10
 });
