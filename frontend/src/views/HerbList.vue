@@ -83,6 +83,7 @@ onMounted(async () => {
 </script>
 
 <style scoped>
+/* 样式保持不变 */
 .herb-list-page {
   max-width: 1280px;
   margin: 0 auto;
@@ -121,8 +122,6 @@ h1 {
   outline: none;
   border-color: var(--brand-accent);
 }
-
-/* 深色下拉选择框样式 */
 .filter-select {
   background: var(--bg-surface, #191a1b);
   border: 1px solid var(--border-standard, rgba(255,255,255,0.08));
@@ -133,8 +132,6 @@ h1 {
   color: var(--text-primary, #f7f8f8);
   cursor: pointer;
   appearance: none;
-  -webkit-appearance: none;
-  -moz-appearance: none;
   background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%23d0d6e0' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'><polyline points='6 9 12 15 18 9'></polyline></svg>");
   background-repeat: no-repeat;
   background-position: right 12px center;
@@ -151,7 +148,6 @@ h1 {
 .filter-select:hover {
   background-color: var(--bg-elevated, #28282c);
 }
-
 .herb-grid {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));

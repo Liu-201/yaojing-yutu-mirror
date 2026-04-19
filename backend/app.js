@@ -18,6 +18,7 @@ app.get('/', (req, res) => {
 app.use('/api/auth', require('./routes/auth'));
 app.use('/api/user', require('./routes/user'));
 app.use('/api/ai', require('./routes/ai'));
+app.use('/api/herbs', require('./routes/herb'));
 
 // 健康检查
 app.get('/api/health', (req, res) => {

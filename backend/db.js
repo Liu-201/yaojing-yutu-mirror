@@ -24,6 +24,7 @@ const pool = mysql.createPool({
 const createTables = async () => {
   const connection = await pool.promise().getConnection();
   try {
+    // 用户表
     await connection.query(`
       CREATE TABLE IF NOT EXISTS users (
         id INT PRIMARY KEY AUTO_INCREMENT,
@@ -35,6 +36,7 @@ const createTables = async () => {
         created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
       )
     `);
+    // 收藏表
     await connection.query(`
       CREATE TABLE IF NOT EXISTS favorites (
         id INT PRIMARY KEY AUTO_INCREMENT,
@@ -44,6 +46,7 @@ const createTables = async () => {
         UNIQUE KEY unique_favorite (user_id, herb_id)
       )
     `);
+    // 问答历史表
     await connection.query(`
       CREATE TABLE IF NOT EXISTS qa_history (
         id INT PRIMARY KEY AUTO_INCREMENT,
@@ -54,7 +57,45 @@ const createTables = async () => {
         created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
       )
     `);
-    console.log('✅ 数据库表已检查/创建');
+
+    // 药材表（新增）
+    await connection.query(`
+      CREATE TABLE IF NOT EXISTS herbs (
+        id INT PRIMARY KEY AUTO_INCREMENT,
+        name VARCHAR(100) NOT NULL,
+        latin_name VARCHAR(200),
+        category VARCHAR(50),
+        category_label VARCHAR(50),
+        image_url TEXT,
+        effect_short VARCHAR(100),
+        effects TEXT,
+        property_flavor VARCHAR(200),
+        producing_area TEXT,
+        chemical_composition TEXT,
+        historical_story TEXT,
+        status VARCHAR(20) DEFAULT 'common',
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+      )
+    `);
+
+    // 产区表（新增）
+    await connection.query(`
+      CREATE TABLE IF NOT EXISTS producing_areas (
+        id INT PRIMARY KEY AUTO_INCREMENT,
+        name VARCHAR(100) NOT NULL,
+        city VARCHAR(100),
+        province VARCHAR(100),
+        herb_id INT,
+        herb_name VARCHAR(100),
+        lng DECIMAL(10,6),
+        lat DECIMAL(10,6),
+        description TEXT,
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        FOREIGN KEY (herb_id) REFERENCES herbs(id) ON DELETE SET NULL
+      )
+    `);
+
+    console.log('✅ 数据库表已检查/创建（含 herbs、producing_areas）');
   } catch (err) {
     console.error('❌ 创建表失败:', err);
   } finally {

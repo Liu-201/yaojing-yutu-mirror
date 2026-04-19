@@ -50,8 +50,10 @@ import ToastContainer from '@/components/ToastContainer.vue'
 import AuthModal from '@/components/AuthModal.vue'
 import { useReveal } from '@/composables/useReveal'
 import logoUrl from '@/assets/logo.svg'
+import { useHerbStore } from '@/stores/herbStore'
 
 const showAuthModal = ref(false)
+const herbStore = useHerbStore()
 
 const navItems = [
   { label: '首页', href: '/' },
@@ -72,9 +74,11 @@ const onLoginSuccess = () => {
   location.reload()
 }
 
-onMounted(() => {
+onMounted(async () => {
   useReveal()
   window.addEventListener('open-auth-modal', handleOpenAuthModal)
+  await herbStore.fetchHerbs()
+  await herbStore.fetchProducingAreas()
 })
 </script>
 
