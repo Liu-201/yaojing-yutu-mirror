@@ -50,7 +50,7 @@ function addMarkers() {
       title: area.name,
       icon: new window.AMap.Icon({
         size: new window.AMap.Size(16, 16),
-        image: '../frontend/public/mappointer.png', // 可替换为自定义圆形图标
+        image: '/ggjdingwei.svg', // 可替换为自定义圆形图标
         imageSize: new window.AMap.Size(16, 16)
       }),
       offset: new window.AMap.Pixel(-8, -8)
