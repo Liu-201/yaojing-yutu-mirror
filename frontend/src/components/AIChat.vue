@@ -89,12 +89,13 @@ async function callBackendAPI(question) {
   }
 }
 
-// 键盘处理：回车键换行（不发送），只有点击发送按钮才发送
+// 键盘处理：Enter 发送，Shift+Enter 换行
 function handleKeydown(e) {
-  iif (e.key === 'Enter' && !e.shiftKey);{
+  if (e.key === 'Enter' && !e.shiftKey) {
     e.preventDefault()
     sendMessage()
   }
+  // Shift+Enter 不做任何处理，保持默认换行行为
 }
 
 async function sendMessage() {
