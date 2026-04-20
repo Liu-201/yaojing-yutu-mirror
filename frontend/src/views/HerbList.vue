@@ -11,6 +11,16 @@
           <option value="flower">花类</option>
           <option value="fruit">果实类</option>
           <option value="whole">全草类</option>
+          <option value="leaf">叶类</option>
+          <option value="bark">皮类</option>
+          <option value="stem">茎木类</option>
+          <option value="fungus">菌类</option>
+          <option value="animal">动物类</option>
+          <option value="mineral">矿物类</option>
+          <option value="processed">加工类</option>
+          <option value="seed">种子类</option>
+          <option value="bulb">鳞茎类</option>
+          <option value="pollen">花粉类</option>
         </select>
       </div>
     </div>
