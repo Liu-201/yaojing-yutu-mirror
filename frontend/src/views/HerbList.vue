@@ -24,9 +24,10 @@
         </select>
       </div>
     </div>
+
     <div class="herb-grid">
       <TiltedCard
-        v-for="herb in filteredHerbs"
+        v-for="herb in paginatedHerbs"
         :key="herb.id"
         :imageSrc="herb.image"
         :altText="herb.name"
@@ -51,6 +52,14 @@
         </template>
       </TiltedCard>
     </div>
+
+    <!-- 分页控件 -->
+    <div class="pagination" v-if="totalPages > 1">
+      <button class="page-btn" @click="currentPage--" :disabled="currentPage === 1">上一页</button>
+      <span class="page-info">第 {{ currentPage }} / {{ totalPages }} 页</span>
+      <button class="page-btn" @click="currentPage++" :disabled="currentPage === totalPages">下一页</button>
+    </div>
+
     <div v-if="filteredHerbs.length === 0" class="empty-state">
       <p>暂无相关药材，试试其他关键词～</p>
     </div>
@@ -68,7 +77,10 @@ const herbStore = useHerbStore()
 
 const searchQuery = ref('')
 const categoryFilter = ref('all')
+const currentPage = ref(1)
+const pageSize = 24 // 每页显示24个（4x6网格）
 
+// 过滤后的全部药材
 const filteredHerbs = computed(() => {
   let list = herbStore.herbs
   if (searchQuery.value) {
@@ -79,6 +91,29 @@ const filteredHerbs = computed(() => {
     list = list.filter(h => h.category === categoryFilter.value)
   }
   return list
+})
+
+// 分页后的数据
+const paginatedHerbs = computed(() => {
+  const start = (currentPage.value - 1) * pageSize
+  const end = start + pageSize
+  return filteredHerbs.value.slice(start, end)
+})
+
+// 总页数
+const totalPages = computed(() => {
+  return Math.ceil(filteredHerbs.value.length / pageSize)
+})
+
+// 当筛选条件改变时，重置到第一页
+const resetPage = () => {
+  currentPage.value = 1
+}
+
+// 监听筛选条件变化
+import { watch } from 'vue'
+watch([searchQuery, categoryFilter], () => {
+  resetPage()
 })
 
 function goToDetail(id) {
@@ -93,7 +128,7 @@ onMounted(async () => {
 </script>
 
 <style scoped>
-/* 样式保持不变 */
+/* 原有样式保持不变，新增分页样式 */
 .herb-list-page {
   max-width: 1280px;
   margin: 0 auto;
@@ -190,6 +225,38 @@ h1 {
 .empty-state {
   text-align: center;
   padding: var(--space-12);
+  color: var(--text-tertiary);
+}
+
+/* 分页样式 */
+.pagination {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: var(--space-4);
+  margin-top: var(--space-8);
+  padding: var(--space-4) 0;
+}
+.page-btn {
+  background: rgba(255,255,255,0.02);
+  border: 1px solid var(--border-standard);
+  border-radius: var(--radius-md);
+  padding: 6px 16px;
+  font-size: 14px;
+  color: var(--text-secondary);
+  cursor: pointer;
+  transition: all 0.2s;
+}
+.page-btn:hover:not(:disabled) {
+  background: rgba(255,255,255,0.05);
+  color: var(--text-primary);
+}
+.page-btn:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+.page-info {
+  font-size: 14px;
   color: var(--text-tertiary);
 }
 </style>
