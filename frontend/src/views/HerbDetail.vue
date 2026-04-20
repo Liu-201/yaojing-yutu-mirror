@@ -86,7 +86,7 @@ const toggleFavorite = async () => {
     return
   }
   await userStore.toggleFavorite(herb.value.id)
-  toastStore.addToast(isFavorited.value ? '已取消收藏' : '已添加至收藏', 'success', 1500)
+  toastStore.addToast(isFavorited.value ? '已收藏' : '已取消收藏', 'success', 1500)
 }
 </script>
 
