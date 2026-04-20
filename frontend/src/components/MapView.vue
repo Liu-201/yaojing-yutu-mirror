@@ -49,11 +49,11 @@ function addMarkers() {
       position: [area.lng, area.lat],
       title: area.name,
       icon: new window.AMap.Icon({
-        size: new window.AMap.Size(32, 32),
+        size: new window.AMap.Size(20, 20),
         image: '/ggjdingwei.svg', // 可替换为自定义圆形图标
-        imageSize: new window.AMap.Size(32, 32)
+        imageSize: new window.AMap.Size(20, 20)
       }),
-      offset: new window.AMap.Pixel(-16, -16)
+      offset: new window.AMap.Pixel(-10, -10)
     })
     marker.setMap(map)
 
