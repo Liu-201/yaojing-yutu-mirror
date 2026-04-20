@@ -54,7 +54,7 @@
 </template>
 
 <script setup>
-import { ref, computed } from 'vue'
+import { ref, onMounted, onBeforeUnmount } from 'vue'
 
 const props = defineProps({
   imageSrc: { type: String, required: true },
@@ -83,20 +83,37 @@ const rotateFigcaption = ref(0)
 
 let lastY = 0
 
+// 重置所有倾斜和缩放状态
+const resetTransform = () => {
+  rotateX.value = 0
+  rotateY.value = 0
+  scale.value = 1
+  tooltipOpacity.value = 0
+  rotateFigcaption.value = 0
+  lastY = 0
+}
+
 const handleMouseMove = (e) => {
   if (!cardRef.value) return
 
   const rect = cardRef.value.getBoundingClientRect()
+  // 防止除零或无效尺寸
+  if (rect.width === 0 || rect.height === 0) return
+
   const offsetX = e.clientX - rect.left - rect.width / 2
   const offsetY = e.clientY - rect.top - rect.height / 2
 
-  const rotationX = (offsetY / (rect.height / 2)) * -props.rotateAmplitude
-  const rotationY = (offsetX / (rect.width / 2)) * props.rotateAmplitude
+  let rotationX = (offsetY / (rect.height / 2)) * -props.rotateAmplitude
+  let rotationY = (offsetX / (rect.width / 2)) * props.rotateAmplitude
+
+  // 防止 NaN
+  if (isNaN(rotationX)) rotationX = 0
+  if (isNaN(rotationY)) rotationY = 0
 
   rotateX.value = rotationX
   rotateY.value = rotationY
 
-  // 计算 tooltip 位置（相对于 figure 的偏移）
+  // 计算 tooltip 位置
   const relativeX = e.clientX - rect.left
   const relativeY = e.clientY - rect.top
   tooltipX.value = relativeX + 10
@@ -119,6 +136,19 @@ const handleMouseLeave = () => {
   tooltipOpacity.value = 0
   rotateFigcaption.value = 0
 }
+
+// 监听窗口缩放，重置所有变换
+const handleResize = () => {
+  resetTransform()
+}
+
+onMounted(() => {
+  window.addEventListener('resize', handleResize)
+})
+
+onBeforeUnmount(() => {
+  window.removeEventListener('resize', handleResize)
+})
 </script>
 
 <style scoped>
