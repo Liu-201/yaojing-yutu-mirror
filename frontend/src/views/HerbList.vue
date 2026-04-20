@@ -78,7 +78,7 @@ const herbStore = useHerbStore()
 const searchQuery = ref('')
 const categoryFilter = ref('all')
 const currentPage = ref(1)
-const pageSize = 24 // 每页显示24个（4x6网格）
+const pageSize = 15 // 每页显示24个（4x6网格）
 
 // 过滤后的全部药材
 const filteredHerbs = computed(() => {
