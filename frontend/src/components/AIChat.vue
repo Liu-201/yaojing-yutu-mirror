@@ -91,16 +91,9 @@ async function callBackendAPI(question) {
 
 // 键盘处理：回车键换行（不发送），只有点击发送按钮才发送
 function handleKeydown(e) {
-  if (e.key === !e.shiftKey) {
+  iif (e.key === 'Enter' && !e.shiftKey);{
     e.preventDefault()
-    const textarea = textareaRef.value
-    const start = textarea.selectionStart
-    const end = textarea.selectionEnd
-    const value = inputText.value
-    inputText.value = value.substring(0, start) + '\n' + value.substring(end)
-    nextTick(() => {
-      textarea.selectionStart = textarea.selectionEnd = start + 1
-    })
+    sendMessage()
   }
 }
 
