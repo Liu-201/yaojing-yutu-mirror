@@ -1,5 +1,5 @@
 <template>
-  <div id="map-container" style="width: 100%; height: 500px; border-radius: var(--radius-lg); overflow: hidden; position: relative;"></div>
+  <div id="map-container" style="width: 100%; height: 500px; border-radius: var(--radius-lg); overflow: hidden;"></div>
 </template>
 
 <script setup>
@@ -26,52 +26,58 @@ onMounted(async () => {
 })
 
 function initMap() {
-  //限制显示范围为中国境内
+  // 创建地图实例，增加限制范围属性
   map = new window.AMap.Map('map-container', {
     zoom: 5,
     center: [104.0, 35.0],
     viewMode: '2D',
     mapStyle: 'amap://styles/dark',
     features: ['bg', 'road', 'building', 'point'],
+    // 限制地图显示范围为中国境内（粗略边界）
     limitBounds: new window.AMap.Bounds(
       new window.AMap.LngLat(73.0, 18.0),
       new window.AMap.LngLat(135.0, 53.0)
     )
   })
   map.setDefaultCursor('pointer')
+  
   map.on('complete', () => {
     addMarkers()
-    //获取并显示审图号
-    getAndShowApprovalNumber()
+    // 获取并显示审图号
+    showApprovalNumber()
   })
 }
 
-// 获取审图号并显示在地图容器左下角
-function getAndShowApprovalNumber() {
+// 显示审图号
+function showApprovalNumber() {
   if (!map) return
-  const approvalNumber = map.getApprovalNumber()
-  const mapContentNum = approvalNumber.mapContentApprovalNumber || ''
-  const satelliteNum = approvalNumber.satelliteImageApprovalNumber || ''
+  // 高德 JS API 2.0 提供 getApprovalNumber 方法
+  const approval = map.getApprovalNumber()
+  const mapContentNum = approval.mapContentApprovalNumber || ''
+  const satelliteNum = approval.satelliteImageApprovalNumber || ''
   
   let approvalDiv = document.getElementById('amap-approval-number')
   if (!approvalDiv) {
     approvalDiv = document.createElement('div')
     approvalDiv.id = 'amap-approval-number'
-    approvalDiv.style.position = 'absolute'
-    approvalDiv.style.bottom = '10px'
-    approvalDiv.style.left = '10px'
-    approvalDiv.style.backgroundColor = 'rgba(0,0,0,0.6)'
-    approvalDiv.style.color = '#ccc'
-    approvalDiv.style.fontSize = '10px'
-    approvalDiv.style.padding = '2px 6px'
-    approvalDiv.style.borderRadius = '4px'
-    approvalDiv.style.zIndex = '100'
-    approvalDiv.style.pointerEvents = 'none'
-    approvalDiv.style.fontFamily = 'monospace'
+    approvalDiv.style.cssText = `
+      position: absolute;
+      bottom: 10px;
+      left: 10px;
+      background: rgba(0,0,0,0.65);
+      color: #ccc;
+      font-size: 10px;
+      padding: 2px 6px;
+      border-radius: 4px;
+      z-index: 100;
+      pointer-events: none;
+      font-family: monospace;
+      backdrop-filter: blur(4px);
+    `
     const container = document.getElementById('map-container')
     if (container) container.appendChild(approvalDiv)
   }
-  approvalDiv.innerHTML = `地图审图号：${mapContentNum}${satelliteNum ? ` 卫星图审图号：${satelliteNum}` : ''} | 数据 © 高德地图`
+  approvalDiv.innerHTML = `地图审图号：${mapContentNum}`
 }
 
 function addMarkers() {
