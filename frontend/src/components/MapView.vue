@@ -1,5 +1,5 @@
 <template>
-  <div id="map-container" style="width: 100%; height: 500px; border-radius: var(--radius-lg); overflow: hidden;"></div>
+  <div id="map-container" style="width: 100%; height: 500px; border-radius: var(--radius-lg); overflow: hidden; position: relative;"></div>
 </template>
 
 <script setup>
@@ -26,17 +26,52 @@ onMounted(async () => {
 })
 
 function initMap() {
+  //限制显示范围为中国境内
   map = new window.AMap.Map('map-container', {
     zoom: 5,
     center: [104.0, 35.0],
     viewMode: '2D',
-    mapStyle: 'amap://styles/dark', // 使用官方深色主题
-    features: ['bg', 'road', 'building', 'point']
+    mapStyle: 'amap://styles/dark',
+    features: ['bg', 'road', 'building', 'point'],
+    limitBounds: new window.AMap.Bounds(
+      new window.AMap.LngLat(73.0, 18.0),
+      new window.AMap.LngLat(135.0, 53.0)
+    )
   })
   map.setDefaultCursor('pointer')
   map.on('complete', () => {
     addMarkers()
+    //获取并显示审图号
+    getAndShowApprovalNumber()
   })
+}
+
+// 获取审图号并显示在地图容器左下角
+function getAndShowApprovalNumber() {
+  if (!map) return
+  const approvalNumber = map.getApprovalNumber()
+  const mapContentNum = approvalNumber.mapContentApprovalNumber || ''
+  const satelliteNum = approvalNumber.satelliteImageApprovalNumber || ''
+  
+  let approvalDiv = document.getElementById('amap-approval-number')
+  if (!approvalDiv) {
+    approvalDiv = document.createElement('div')
+    approvalDiv.id = 'amap-approval-number'
+    approvalDiv.style.position = 'absolute'
+    approvalDiv.style.bottom = '10px'
+    approvalDiv.style.left = '10px'
+    approvalDiv.style.backgroundColor = 'rgba(0,0,0,0.6)'
+    approvalDiv.style.color = '#ccc'
+    approvalDiv.style.fontSize = '10px'
+    approvalDiv.style.padding = '2px 6px'
+    approvalDiv.style.borderRadius = '4px'
+    approvalDiv.style.zIndex = '100'
+    approvalDiv.style.pointerEvents = 'none'
+    approvalDiv.style.fontFamily = 'monospace'
+    const container = document.getElementById('map-container')
+    if (container) container.appendChild(approvalDiv)
+  }
+  approvalDiv.innerHTML = `地图审图号：${mapContentNum}${satelliteNum ? ` 卫星图审图号：${satelliteNum}` : ''} | 数据 © 高德地图`
 }
 
 function addMarkers() {
@@ -44,20 +79,18 @@ function addMarkers() {
   if (!areas.length) return
 
   areas.forEach(area => {
-    // 自定义标记点图标（更符合 Linear 风格的简洁圆点）
     const marker = new window.AMap.Marker({
       position: [area.lng, area.lat],
       title: area.name,
       icon: new window.AMap.Icon({
         size: new window.AMap.Size(20, 20),
-        image: '/ggjdingwei.svg', // 可替换为自定义圆形图标
+        image: '/ggjdingwei.svg',
         imageSize: new window.AMap.Size(20, 20)
       }),
       offset: new window.AMap.Pixel(-10, -10)
     })
     marker.setMap(map)
 
-    // 信息窗体内容（深色玻璃态，无白边）
     const content = `
       <div class="custom-info-window glass-card">
         <h4>${area.herbName || area.name}</h4>
@@ -69,7 +102,7 @@ function addMarkers() {
     const infoWindow = new window.AMap.InfoWindow({
       content: content,
       offset: new window.AMap.Pixel(0, -30),
-      isCustom: true  // 完全自定义样式，不使用默认窗体
+      isCustom: true
     })
 
     marker.on('click', () => {
@@ -110,7 +143,7 @@ onBeforeUnmount(() => {
 </style>
 
 <style>
-/* 全局覆盖高德地图默认信息窗体样式（确保深色无白边） */
+/* 全局覆盖高德地图默认信息窗体样式 */
 .amap-info-window {
   background: transparent !important;
   border: none !important;
