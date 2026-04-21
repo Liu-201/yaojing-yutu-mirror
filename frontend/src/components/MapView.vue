@@ -26,41 +26,41 @@ onMounted(async () => {
 })
 
 function initMap() {
-  // 创建地图实例，增加限制范围属性
   map = new window.AMap.Map('map-container', {
     zoom: 5,
     center: [104.0, 35.0],
     viewMode: '2D',
     mapStyle: 'amap://styles/dark',
-    features: ['bg', 'road', 'building', 'point'],
-    // 限制地图显示范围为中国境内（粗略边界）
-    limitBounds: new window.AMap.Bounds(
-      new window.AMap.LngLat(73.0, 18.0),
-      new window.AMap.LngLat(135.0, 53.0)
-    )
+    features: ['bg', 'road', 'building', 'point']
   })
   map.setDefaultCursor('pointer')
-  
+
+  // 限制地图显示范围为中国境内（粗略边界，若导致问题可注释）
+  try {
+    map.setLimitBounds(
+      new window.AMap.Bounds(
+        new window.AMap.LngLat(73.0, 18.0),
+        new window.AMap.LngLat(135.0, 53.0)
+      )
+    )
+  } catch (e) {
+    console.warn('设置地图范围限制失败', e)
+  }
+
   map.on('complete', () => {
     addMarkers()
-    // 获取并显示审图号
     showApprovalNumber()
   })
 }
 
-// 显示审图号
 function showApprovalNumber() {
-  if (!map) return
-  // 高德 JS API 2.0 提供 getApprovalNumber 方法
-  const approval = map.getApprovalNumber()
-  const mapContentNum = approval.mapContentApprovalNumber || ''
-  const satelliteNum = approval.satelliteImageApprovalNumber || ''
-  
-  let approvalDiv = document.getElementById('amap-approval-number')
-  if (!approvalDiv) {
-    approvalDiv = document.createElement('div')
-    approvalDiv.id = 'amap-approval-number'
-    approvalDiv.style.cssText = `
+  // 高德地图官方审图号（根据文档：https://lbs.amap.com/faq/ios/map-sdk/map-display/stactic_ios）
+  const approvalNumber = 'GS(2023)551号'
+  let div = document.getElementById('amap-approval-number')
+  if (!div) {
+    div = document.createElement('div')
+    div.id = 'amap-approval-number'
+    div.style.cssText = `
       position: absolute;
       bottom: 10px;
       left: 10px;
@@ -72,12 +72,11 @@ function showApprovalNumber() {
       z-index: 100;
       pointer-events: none;
       font-family: monospace;
-      backdrop-filter: blur(4px);
     `
     const container = document.getElementById('map-container')
-    if (container) container.appendChild(approvalDiv)
+    if (container) container.appendChild(div)
   }
-  approvalDiv.innerHTML = `地图审图号：${mapContentNum}`
+  div.innerHTML = `地图审图号：${approvalNumber}`
 }
 
 function addMarkers() {
@@ -99,9 +98,9 @@ function addMarkers() {
 
     const content = `
       <div class="custom-info-window glass-card">
-        <h4>${area.herbName || area.name}</h4>
-        <p class="location">${area.province} · ${area.city}</p>
-        <p class="desc">${area.description}</p>
+        <h4>${escapeHtml(area.herbName || area.name)}</h4>
+        <p class="location">${escapeHtml(area.province)} · ${escapeHtml(area.city)}</p>
+        <p class="desc">${escapeHtml(area.description)}</p>
         <button class="info-btn clickable-scale" data-id="${area.id}">查看详情</button>
       </div>
     `
@@ -133,6 +132,16 @@ function addMarkers() {
   })
 }
 
+function escapeHtml(str) {
+  if (!str) return ''
+  return str.replace(/[&<>]/g, function(m) {
+    if (m === '&') return '&amp;'
+    if (m === '<') return '&lt;'
+    if (m === '>') return '&gt;'
+    return m
+  })
+}
+
 onBeforeUnmount(() => {
   if (map) {
     map.destroy()
@@ -149,7 +158,7 @@ onBeforeUnmount(() => {
 </style>
 
 <style>
-/* 全局覆盖高德地图默认信息窗体样式 */
+/* 全局覆盖高德地图默认信息窗体样式（确保深色无白边） */
 .amap-info-window {
   background: transparent !important;
   border: none !important;
